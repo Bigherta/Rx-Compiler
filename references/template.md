@@ -45,6 +45,17 @@ IR 测试还需要 **Clang 22**。
 - `vendor/REIMU` 下的 REIMU，为 Git 子模块。`config.mk` 中的 `RUN` 命令会调用它；测试运行器本身并不依赖特定的模拟器。
 - `grammar/` 目录下的 Rx 语言 G4 文法。你可以使用它来为编译器生成词法分析器和语法分析器。
 
+## 本地构建 ANTLR C++ Parser
+
+仓库在 `vendor/antlr4-cpp/` 中包含 ANTLR 4.13.2 的 C++ runtime 源码（见其 `LICENSE.txt`），`generated/` 中是同版本生成的 Lexer、Parser、Visitor 和 Listener。使用 CMake 从项目根目录构建，无须在系统中安装 ANTLR runtime：
+
+```sh
+cmake -S . -B target/antlr4-build -DCMAKE_BUILD_TYPE=Release
+cmake --build target/antlr4-build -j 2
+```
+
+构建目标 `rx_parser` 会编译生成代码并链接本地构建的静态库 `antlr4_static`；在你自己的 CMake 目标中使用 `target_link_libraries(你的目标 PRIVATE rx_parser)` 即可继承头文件路径和 runtime 链接依赖。构建产物位于被 Git 忽略的 `target/antlr4-build/`。上述 CMake 构建仅提供解析器库；要让测试脚手架运行你的编译器，还需按下文配置 `config.mk`。
+
 ## 配置 Makefile
 
 Makefile 是调用你编译器的统一入口。你需要编辑 [`config.mk`](config.mk) 并接入你的编译器命令。具体来说，需要配置以下字段：

@@ -5,6 +5,7 @@
 /.xmake/
 
 # ANTLR
+tools
 .antlr
 
 # Python test runner
@@ -13,3 +14,9 @@ __pycache__/
 # Local files
 dev/
 *.local.*
+
+# build files
+build
+
+.gitignore
+.gitmodules
