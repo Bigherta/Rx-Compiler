@@ -66,8 +66,8 @@ public:
   std::unique_ptr<ExprNode>
   visitLogicalOrExprNode(RxParser::ConditionLogicalOrExpressionContext *ctx);
 
-  std::unique_ptr<ExprNode>
-  visitLogicalOrExprNode(RxParser::ConditionBreakLogicalOrExpressionContext *ctx);
+  std::unique_ptr<ExprNode> visitLogicalOrExprNode(
+      RxParser::ConditionBreakLogicalOrExpressionContext *ctx);
 
   std::unique_ptr<ExprNode>
   visitLogicalAndExprNode(RxParser::LogicalAndExpressionContext *ctx);
@@ -138,8 +138,8 @@ public:
   std::unique_ptr<ExprNode>
   visitBitXorExprNode(RxParser::ConditionBreakBitXorExpressionContext *ctx);
 
-  std::unique_ptr<ExprNode>
-  visitBitXorExprNode(RxParser::ConditionBreakClosedBitXorExpressionContext *ctx);
+  std::unique_ptr<ExprNode> visitBitXorExprNode(
+      RxParser::ConditionBreakClosedBitXorExpressionContext *ctx);
 
   std::unique_ptr<ExprNode>
   visitBitAndExprNode(RxParser::BitAndExpressionContext *ctx);
@@ -162,8 +162,8 @@ public:
   std::unique_ptr<ExprNode>
   visitBitAndExprNode(RxParser::ConditionBreakBitAndExpressionContext *ctx);
 
-  std::unique_ptr<ExprNode>
-  visitBitAndExprNode(RxParser::ConditionBreakClosedBitAndExpressionContext *ctx);
+  std::unique_ptr<ExprNode> visitBitAndExprNode(
+      RxParser::ConditionBreakClosedBitAndExpressionContext *ctx);
 
   std::unique_ptr<ExprNode>
   visitShiftExprNode(RxParser::ShiftExpressionContext *ctx);
@@ -312,10 +312,10 @@ public:
   std::unique_ptr<IfExprNode>
   visitIfExprNode(RxParser::IfExpressionContext *ctx);
 
-  std::unique_ptr<LoopExprNode>
+  std::unique_ptr<ExprNode>
   visitLoopExprNode(RxParser::ExpressionWithBlockContext *ctx);
 
-    std::unique_ptr<LoopExprNode>
+  std::unique_ptr<ExprNode>
   visitLoopExprNode(RxParser::ConditionPrimaryWithoutBareBlockContext *ctx);
 
   std::unique_ptr<PathInExprNode>
@@ -330,4 +330,7 @@ public:
 
   std::unique_ptr<TypeNode>
   visitClosedCastTypeNode(RxParser::ClosedCastTypeContext *ctx);
+
+private:
+  GenericArgs visitGenericArgsNode(RxParser::GenericArgsContext *ctx);
 };

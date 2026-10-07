@@ -13,8 +13,63 @@ struct position {
   std::size_t endLine;
   std::size_t endColumn;
 }; // Source positions use [start, end).
+
+enum class nodeKind {
+  // crate and attribute
+  Crate,
+  OuterAttribute,
+
+  // type
+  UnitType,
+  PathInType,
+  ReferenceType,
+  ArrayType,
+
+  // item
+  FunctionDeclItem,
+  StructDeclItem,
+  ConstantDeclItem,
+  ImplDeclItem,
+
+  // statement
+  EmptyStmt,
+  LetStmt,
+  ExpressionStmt,
+
+  // expression without block
+  UnitExpr,
+  PathInExpr,
+  LiteralExpr,
+  UnaryExpr,
+  BinaryExpr,
+  ComparisonExpr,
+  LogicExpr,
+  CastExpr,
+  BorrowExpr,
+  DereferenceExpr,
+  AssignmentExpr,
+  MagnitudeExpr,
+  ConstExpr,
+  ArrayExpr,
+  IndexExpr,
+  StructExpr,
+  CallExpr,
+  MethodCallExpr,
+  ReturnExpr,
+  AccessExpr,
+  ContinueExpr,
+  BreakExpr,
+
+  // expression with block
+  BlockExpr,
+  IfExpr,
+  InfiniteLoopExpr,
+  PredicateLoopExpr,
+};
+
 class ASTNode {
 public:
+  nodeKind kind;
   position pos;
   ASTNode(const position &pos) : pos(pos) {}
   ASTNode(position &&pos) : pos(std::move(pos)) {}
@@ -63,9 +118,14 @@ struct GenericArg {
       : genericArgType(std::move(type)) {}
 };
 
+struct GenericArgs {
+  std::vector<GenericArg> genericArgs;
+  bool hasLifeTime = false;
+};
+
 struct PathSegment {
   std::string pathIdentSegment; // identifier / self / Self
-  std::vector<GenericArg> genericArgs;
+  GenericArgs args;
   PathSegment() = default;
   PathSegment(PathSegment &&) noexcept = default;
   PathSegment &operator=(PathSegment &&) noexcept = default;
@@ -75,20 +135,11 @@ struct PathNode {
   std::vector<PathSegment> segments;
 };
 
-enum class PrimitiveType {
-  i32Type,
-  isizeType,
-  u32Type,
-  usizeType,
-  boolType,
-  unitType,
-};
-
-class PrimitiveTypeNode : public TypeNode {
+class UnitTypeNode : public TypeNode {
 public:
-  PrimitiveType primitiveType;
-  PrimitiveTypeNode(const position &pos, PrimitiveType type)
-      : TypeNode(pos), primitiveType(type) {}
+  UnitTypeNode(const position &pos) : TypeNode(pos) {
+    kind = nodeKind::UnitType;
+  }
 };
 
 enum class ContainerTypeKeyword {
@@ -99,7 +150,9 @@ enum class ContainerTypeKeyword {
 class PathInTypeNode : public TypeNode {
 public:
   PathNode path;
-  PathInTypeNode(const position &pos) : TypeNode(pos) {}
+  PathInTypeNode(const position &pos) : TypeNode(pos) {
+    kind = nodeKind::PathInType;
+  }
 };
 
 enum class ReferenceKind {
@@ -113,8 +166,10 @@ public:
   std::unique_ptr<TypeNode> refType;
   ReferenceTypeNode(const position &pos, bool isMutable,
                     std::unique_ptr<TypeNode> type, ReferenceKind kind)
-      : TypeNode(pos), isMut(isMutable), refType(std::move(type)),
-        refKind(kind) {}
+      : TypeNode(pos), isMut(isMutable), refKind(kind),
+        refType(std::move(type)) {
+    this->kind = nodeKind::ReferenceType;
+  }
 };
 
 enum class Attribute {
@@ -129,24 +184,31 @@ public:
   OuterAttributeNode(const position &pos, std::vector<Attribute> &&attributes)
       : ASTNode(pos) {
     outerAttributes = std::move(attributes);
+    kind = nodeKind::OuterAttribute;
   }
 };
 class UnitExprNode : public ExprWithoutBlockNode {
 public:
-  using ExprWithoutBlockNode::ExprWithoutBlockNode;
+  UnitExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
+    kind = nodeKind::UnitExpr;
+  }
 };
 
 class PathInExprNode : public ExprWithoutBlockNode {
 public:
-  using ExprWithoutBlockNode::ExprWithoutBlockNode;
   PathNode path;
+  PathInExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
+    kind = nodeKind::PathInExpr;
+  }
 };
 
 class LiteralExprNode : public ExprWithoutBlockNode {
 public:
   std::string literalValue;
   LiteralExprNode(const position &pos, const std::string &value)
-      : ExprWithoutBlockNode(pos), literalValue(value) {}
+      : ExprWithoutBlockNode(pos), literalValue(value) {
+    kind = nodeKind::LiteralExpr;
+  }
 };
 
 enum class UnaryOperator {
@@ -160,7 +222,9 @@ public:
   std::unique_ptr<ExprNode> childExpr;
   UnaryExprNode(const position &pos, UnaryOperator op,
                 std::unique_ptr<ExprNode> expr)
-      : ExprWithoutBlockNode(pos), op(op), childExpr(std::move(expr)) {}
+      : ExprWithoutBlockNode(pos), op(op), childExpr(std::move(expr)) {
+    kind = nodeKind::UnaryExpr;
+  }
 };
 
 enum class BinaryOperator {
@@ -187,7 +251,9 @@ public:
                  std::unique_ptr<ExprNode> leftExpr,
                  std::unique_ptr<ExprNode> rightExpr)
       : ExprWithoutBlockNode(pos), op(op), leftChildExpr(std::move(leftExpr)),
-        rightChildExpr(std::move(rightExpr)) {}
+        rightChildExpr(std::move(rightExpr)) {
+    kind = nodeKind::BinaryExpr;
+  }
 };
 
 enum class ComparisonOperator {
@@ -208,7 +274,9 @@ public:
                      std::unique_ptr<ExprNode> leftExpr,
                      std::unique_ptr<ExprNode> rightExpr)
       : ExprWithoutBlockNode(pos), op(op), leftChildExpr(std::move(leftExpr)),
-        rightChildExpr(std::move(rightExpr)) {}
+        rightChildExpr(std::move(rightExpr)) {
+    kind = nodeKind::ComparisonExpr;
+  }
 };
 
 enum class LogicOperator {
@@ -225,7 +293,9 @@ public:
                 std::unique_ptr<ExprNode> leftExpr,
                 std::unique_ptr<ExprNode> rightExpr)
       : ExprWithoutBlockNode(pos), op(op), leftChildExpr(std::move(leftExpr)),
-        rightChildExpr(std::move(rightExpr)) {}
+        rightChildExpr(std::move(rightExpr)) {
+    kind = nodeKind::LogicExpr;
+  }
 };
 
 class CastExprNode : public ExprWithoutBlockNode {
@@ -235,7 +305,9 @@ public:
   CastExprNode(const position &pos, std::unique_ptr<TypeNode> type,
                std::unique_ptr<ExprNode> value)
       : ExprWithoutBlockNode(pos), castType(std::move(type)),
-        castValue(std::move(value)) {}
+        castValue(std::move(value)) {
+    kind = nodeKind::CastExpr;
+  }
 };
 
 enum class ReferenceUnaryOperator {
@@ -251,14 +323,18 @@ public:
   BorrowExprNode(const position &pos, bool isMut, ReferenceUnaryOperator op,
                  std::unique_ptr<ExprNode> expr)
       : ExprWithoutBlockNode(pos), isMut(isMut), refOp(op),
-        borrowExpr(std::move(expr)) {}
+        borrowExpr(std::move(expr)) {
+    kind = nodeKind::BorrowExpr;
+  }
 };
 
 class DereferenceExprNode : public ExprWithoutBlockNode {
 public:
   std::unique_ptr<ExprNode> dereferenceExpr;
   DereferenceExprNode(const position &pos, std::unique_ptr<ExprNode> expr)
-      : ExprWithoutBlockNode(pos), dereferenceExpr(std::move(expr)) {}
+      : ExprWithoutBlockNode(pos), dereferenceExpr(std::move(expr)) {
+    kind = nodeKind::DereferenceExpr;
+  }
 };
 
 enum class AssignmentOperator {
@@ -282,15 +358,18 @@ public:
   AssignmentExprNode(const position &pos, AssignmentOperator op,
                      std::unique_ptr<ExprNode> leftExpr,
                      std::unique_ptr<ExprNode> rightExpr)
-      : ExprWithoutBlockNode(pos), assignmentOp(op),
-        leftChildExpr(std::move(leftExpr)),
-        rightChildExpr(std::move(rightExpr)) {}
+      : ExprWithoutBlockNode(pos), leftChildExpr(std::move(leftExpr)),
+        rightChildExpr(std::move(rightExpr)), assignmentOp(op) {
+    kind = nodeKind::AssignmentExpr;
+  }
 };
 
 class MagnitudeExprNode : public ExprWithoutBlockNode {
 public:
-  using ExprWithoutBlockNode::ExprWithoutBlockNode;
   std::variant<std::string, std::unique_ptr<PathInExprNode>> magnitude;
+  MagnitudeExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
+    kind = nodeKind::MagnitudeExpr;
+  }
 };
 
 class ConstExprNode : public ExprWithoutBlockNode {
@@ -301,7 +380,9 @@ public:
                std::unique_ptr<MagnitudeExprNode>>
       constValue;
   ConstExprNode(const position &pos, bool isNeg)
-      : ExprWithoutBlockNode(pos), isNegative(isNeg) {}
+      : ExprWithoutBlockNode(pos), isNegative(isNeg) {
+    kind = nodeKind::ConstExpr;
+  }
 };
 
 class ArrayTypeNode : public TypeNode {
@@ -310,16 +391,20 @@ public:
   std::unique_ptr<ConstExprNode> length;
   ArrayTypeNode(const position &pos, std::unique_ptr<TypeNode> param,
                 std::unique_ptr<ConstExprNode> len)
-      : TypeNode(pos), typeParam(std::move(param)), length(std::move(len)) {}
+      : TypeNode(pos), typeParam(std::move(param)), length(std::move(len)) {
+    kind = nodeKind::ArrayType;
+  }
 };
 
 class ArrayExprNode : public ExprWithoutBlockNode {
 public:
-  using ExprWithoutBlockNode::ExprWithoutBlockNode;
   std::variant<
       std::vector<std::unique_ptr<ExprNode>>,
       std::pair<std::unique_ptr<ExprNode>, std::unique_ptr<ConstExprNode>>>
       arrayEntries;
+  ArrayExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
+    kind = nodeKind::ArrayExpr;
+  }
 };
 
 class PostfixExprNode : public ExprWithoutBlockNode {
@@ -334,7 +419,9 @@ public:
   IndexExprNode(const position &pos, std::unique_ptr<ExprNode> arrayExpr,
                 std::unique_ptr<ExprNode> indexExpr)
       : PostfixExprNode(pos), arrayExpr(std::move(arrayExpr)),
-        indexExpr(std::move(indexExpr)) {}
+        indexExpr(std::move(indexExpr)) {
+    kind = nodeKind::IndexExpr;
+  }
 };
 
 struct structExprField {
@@ -350,7 +437,9 @@ public:
   std::unique_ptr<PathInExprNode> path;
   std::vector<structExprField> structExprFields;
   StructExprNode(const position &pos, std::unique_ptr<PathInExprNode> path)
-      : ExprWithoutBlockNode(pos), path(std::move(path)) {}
+      : ExprWithoutBlockNode(pos), path(std::move(path)) {
+    kind = nodeKind::StructExpr;
+  }
 };
 
 class CallExprNode : public PostfixExprNode {
@@ -358,7 +447,9 @@ public:
   std::unique_ptr<ExprNode> callee;
   std::vector<std::unique_ptr<ExprNode>> callParams;
   CallExprNode(const position &pos, std::unique_ptr<ExprNode> callee)
-      : PostfixExprNode(pos), callee(std::move(callee)) {}
+      : PostfixExprNode(pos), callee(std::move(callee)) {
+    kind = nodeKind::CallExpr;
+  }
 };
 
 class MethodCallExprNode : public PostfixExprNode {
@@ -369,17 +460,22 @@ public:
   MethodCallExprNode(const position &pos, std::unique_ptr<ExprNode> callee,
                      PathSegment &&seg)
       : PostfixExprNode(pos), callee(std::move(callee)),
-        callMethod(std::move(seg)) {}
+        callMethod(std::move(seg)) {
+    kind = nodeKind::MethodCallExpr;
+  }
 };
 
 class ReturnExprNode : public ExprWithoutBlockNode {
 public:
-  std::unique_ptr<ExprNode> returnValue;
+  std::optional<std::unique_ptr<ExprNode>> returnValue;
   ReturnExprNode(const position &pos)
-      : ExprWithoutBlockNode(pos),
-        returnValue(std::make_unique<UnitExprNode>(pos)) {}
+      : ExprWithoutBlockNode(pos), returnValue(std::nullopt) {
+    kind = nodeKind::ReturnExpr;
+  }
   ReturnExprNode(const position &pos, std::unique_ptr<ExprNode> value)
-      : ExprWithoutBlockNode(pos), returnValue(std::move(value)) {}
+      : ExprWithoutBlockNode(pos), returnValue(std::move(value)) {
+    kind = nodeKind::ReturnExpr;
+  }
 };
 
 class AccessExprNode : public ExprWithoutBlockNode {
@@ -389,23 +485,36 @@ public:
   AccessExprNode(const position &pos, std::unique_ptr<ExprNode> obj,
                  const std::string &name)
       : ExprWithoutBlockNode(pos), accessObject(std::move(obj)),
-        identifier(name) {}
+        identifier(name) {
+    kind = nodeKind::AccessExpr;
+  }
 };
 
 class ContinueExprNode : public ExprWithoutBlockNode {
-  using ExprWithoutBlockNode::ExprWithoutBlockNode;
+public:
+  ContinueExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
+    kind = nodeKind::ContinueExpr;
+  }
 };
 
 class BreakExprNode : public ExprWithoutBlockNode {
 public:
   std::optional<std::unique_ptr<ExprNode>> loopValue;
-  using ExprWithoutBlockNode::ExprWithoutBlockNode;
+  BreakExprNode(const position &pos)
+      : ExprWithoutBlockNode(pos), loopValue(std::nullopt) {
+    kind = nodeKind::BreakExpr;
+  }
   BreakExprNode(const position &pos, std::unique_ptr<ExprNode> value)
-      : ExprWithoutBlockNode(pos), loopValue(std::move(value)) {}
+      : ExprWithoutBlockNode(pos), loopValue(std::move(value)) {
+    kind = nodeKind::BreakExpr;
+  }
 };
 
 class EmptyStmtNode : public StmtNode {
-  using StmtNode::StmtNode;
+public:
+  EmptyStmtNode(const position &pos) : StmtNode(pos) {
+    kind = nodeKind::EmptyStmt;
+  }
 };
 
 class LetStmtNode : public StmtNode {
@@ -416,22 +525,28 @@ public:
   std::unique_ptr<ExprNode> value;
   LetStmtNode(const position &pos, bool isMutable,
               std::unique_ptr<ExprNode> valueExpr)
-      : StmtNode(pos), isMut(isMutable), value(std::move(valueExpr)) {}
+      : StmtNode(pos), isMut(isMutable), value(std::move(valueExpr)) {
+    kind = nodeKind::LetStmt;
+  }
 };
 
 class ExpressionStmtNode : public StmtNode {
 public:
-  using StmtNode::StmtNode;
   std::unique_ptr<ExprNode> expr;
   bool hasSemicolon;
+  ExpressionStmtNode(const position &pos) : StmtNode(pos) {
+    kind = nodeKind::ExpressionStmt;
+  }
 };
 
 class BlockExprNode : public ExprWithBlockNode {
 public:
-  using ExprWithBlockNode::ExprWithBlockNode;
   std::vector<std::unique_ptr<StmtNode>> statements;
   std::optional<std::unique_ptr<ExprNode>>
       tailExpr; // return value if there is a tail expression
+  BlockExprNode(const position &pos) : ExprWithBlockNode(pos) {
+    kind = nodeKind::BlockExpr;
+  }
 };
 
 class IfExprNode : public ExprWithBlockNode {
@@ -446,6 +561,7 @@ public:
         body(std::move(body)) {
     elseExpr = std::nullopt;
     elseIfExpr = std::nullopt;
+    kind = nodeKind::IfExpr;
   }
   IfExprNode(IfExprNode &&) noexcept = default;
   IfExprNode &operator=(IfExprNode &&) noexcept = default;
@@ -453,38 +569,25 @@ public:
 
 class InfiniteLoopExprNode : public ExprWithBlockNode {
 public:
-  using ExprWithBlockNode::ExprWithBlockNode;
   std::unique_ptr<BlockExprNode> body;
+  InfiniteLoopExprNode(const position &pos) : ExprWithBlockNode(pos) {
+    kind = nodeKind::InfiniteLoopExpr;
+  }
 };
 
 class PredicateLoopExprNode : public ExprWithBlockNode {
 public:
-  using ExprWithBlockNode::ExprWithBlockNode;
   std::unique_ptr<ExprNode> conditions;
   std::unique_ptr<BlockExprNode> body;
-};
-
-class LoopExprNode : public ExprWithBlockNode {
-public:
-  std::variant<std::unique_ptr<InfiniteLoopExprNode>,
-               std::unique_ptr<PredicateLoopExprNode>>
-      loopExpr;
-  LoopExprNode(const position &pos,
-               std::unique_ptr<InfiniteLoopExprNode> infinite,
-               std::unique_ptr<PredicateLoopExprNode> predicate)
-      : ExprWithBlockNode(pos) {
-    if (infinite) {
-      loopExpr = std::move(infinite);
-    } else {
-      loopExpr = std::move(predicate);
-    }
+  PredicateLoopExprNode(const position &pos) : ExprWithBlockNode(pos) {
+    kind = nodeKind::PredicateLoopExpr;
   }
 };
 
 class CrateNode : public ASTNode {
 public:
   std::vector<std::unique_ptr<ItemNode>> items;
-  CrateNode() : ASTNode({0, 0, 0, 0}){};
+  CrateNode(const position &pos) : ASTNode(pos) { kind = nodeKind::Crate; }
 };
 
 struct SelfParam {
@@ -499,13 +602,16 @@ struct FunctionParam {
 class FunctionDeclItemNode : public ItemNode {
 public:
   std::string identifier;
+  GenericArgs args;
   std::optional<std::unique_ptr<TypeNode>> returnType;
   std::optional<SelfParam> selfParam;
   std::vector<FunctionParam> functionParam;
   std::unique_ptr<BlockExprNode> functionBody;
   FunctionDeclItemNode(const position &pos, const std::string &name,
                        std::unique_ptr<BlockExprNode> expr)
-      : ItemNode(pos), identifier(name), functionBody(std::move(expr)) {}
+      : ItemNode(pos), identifier(name), functionBody(std::move(expr)) {
+    kind = nodeKind::FunctionDeclItem;
+  }
 };
 
 struct StructField {
@@ -519,7 +625,9 @@ public:
   std::string identifier;
   std::vector<StructField> structFields;
   StructDeclItemNode(const position &pos, const std::string &name)
-      : ItemNode(pos), identifier(name) {}
+      : ItemNode(pos), identifier(name) {
+    kind = nodeKind::StructDeclItem;
+  }
 };
 
 class ConstantDeclItemNode : public ItemNode {
@@ -531,14 +639,18 @@ public:
                        std::unique_ptr<TypeNode> type,
                        std::unique_ptr<ConstExprNode> value)
       : ItemNode(pos), identifier(name), constType(std::move(type)),
-        constValue(std::move(value)) {}
+        constValue(std::move(value)) {
+    kind = nodeKind::ConstantDeclItem;
+  }
 };
 
 class ImplDeclItemNode : public ItemNode {
 public:
-  using ItemNode::ItemNode;
   std::unique_ptr<TypeNode> implType;
   std::vector<std::variant<std::unique_ptr<ConstantDeclItemNode>,
                            std::unique_ptr<FunctionDeclItemNode>>>
       associatedItems;
+  ImplDeclItemNode(const position &pos) : ItemNode(pos) {
+    kind = nodeKind::ImplDeclItem;
+  }
 };
