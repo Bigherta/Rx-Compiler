@@ -7,7 +7,7 @@ class ASTBuilder {
 public:
   std::unique_ptr<CrateNode>
   visitCrate(RxParser::CrateContext *ctx); // build the tree root
-
+private:
   std::unique_ptr<ItemNode> visitItem(RxParser::ItemContext *ctx);
 
   std::unique_ptr<FunctionDeclItemNode>
@@ -331,6 +331,11 @@ public:
   std::unique_ptr<TypeNode>
   visitClosedCastTypeNode(RxParser::ClosedCastTypeContext *ctx);
 
-private:
   GenericArgs visitGenericArgsNode(RxParser::GenericArgsContext *ctx);
+
+  AssignmentOperator
+  getAssignmentOperator(RxParser::AssignmentOperatorContext *ctx);
+
+  ComparisonOperator
+  getComparisonOperator(RxParser::ComparisonExceptLtContext *ctx);
 };

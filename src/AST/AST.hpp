@@ -1,4 +1,5 @@
 #pragma once
+#include <any>
 #include <cctype>
 #include <cstddef>
 #include <memory>
@@ -67,6 +68,8 @@ enum class nodeKind {
   PredicateLoopExpr,
 };
 
+class ASTVisitor;
+
 class ASTNode {
 public:
   nodeKind kind;
@@ -74,6 +77,7 @@ public:
   ASTNode(const position &pos) : pos(pos) {}
   ASTNode(position &&pos) : pos(std::move(pos)) {}
   virtual ~ASTNode() = default;
+  virtual std::any accept(ASTVisitor *visitor) = 0;
 };
 
 class TypeNode : public ASTNode {
@@ -137,6 +141,7 @@ struct PathNode {
 
 class UnitTypeNode : public TypeNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   UnitTypeNode(const position &pos) : TypeNode(pos) {
     kind = nodeKind::UnitType;
   }
@@ -149,6 +154,7 @@ enum class ContainerTypeKeyword {
 
 class PathInTypeNode : public TypeNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   PathNode path;
   PathInTypeNode(const position &pos) : TypeNode(pos) {
     kind = nodeKind::PathInType;
@@ -161,6 +167,7 @@ enum class ReferenceKind {
 };
 class ReferenceTypeNode : public TypeNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   bool isMut;
   ReferenceKind refKind;
   std::unique_ptr<TypeNode> refType;
@@ -180,6 +187,7 @@ enum class Attribute {
 };
 class OuterAttributeNode : public ASTNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::vector<Attribute> outerAttributes;
   OuterAttributeNode(const position &pos, std::vector<Attribute> &&attributes)
       : ASTNode(pos) {
@@ -189,6 +197,7 @@ public:
 };
 class UnitExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   UnitExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
     kind = nodeKind::UnitExpr;
   }
@@ -196,6 +205,7 @@ public:
 
 class PathInExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   PathNode path;
   PathInExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
     kind = nodeKind::PathInExpr;
@@ -204,6 +214,7 @@ public:
 
 class LiteralExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::string literalValue;
   LiteralExprNode(const position &pos, const std::string &value)
       : ExprWithoutBlockNode(pos), literalValue(value) {
@@ -218,6 +229,7 @@ enum class UnaryOperator {
 
 class UnaryExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   UnaryOperator op;
   std::unique_ptr<ExprNode> childExpr;
   UnaryExprNode(const position &pos, UnaryOperator op,
@@ -244,6 +256,7 @@ enum class BinaryOperator {
 
 class BinaryExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   BinaryOperator op;
   std::unique_ptr<ExprNode> leftChildExpr;
   std::unique_ptr<ExprNode> rightChildExpr;
@@ -267,6 +280,7 @@ enum class ComparisonOperator {
 
 class ComparisonExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   ComparisonOperator op;
   std::unique_ptr<ExprNode> leftChildExpr;
   std::unique_ptr<ExprNode> rightChildExpr;
@@ -286,6 +300,7 @@ enum class LogicOperator {
 
 class LogicExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   LogicOperator op;
   std::unique_ptr<ExprNode> leftChildExpr;
   std::unique_ptr<ExprNode> rightChildExpr;
@@ -300,6 +315,7 @@ public:
 
 class CastExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<TypeNode> castType;
   std::unique_ptr<ExprNode> castValue;
   CastExprNode(const position &pos, std::unique_ptr<TypeNode> type,
@@ -317,6 +333,7 @@ enum class ReferenceUnaryOperator {
 
 class BorrowExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   bool isMut;
   ReferenceUnaryOperator refOp;
   std::unique_ptr<ExprNode> borrowExpr;
@@ -330,6 +347,7 @@ public:
 
 class DereferenceExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> dereferenceExpr;
   DereferenceExprNode(const position &pos, std::unique_ptr<ExprNode> expr)
       : ExprWithoutBlockNode(pos), dereferenceExpr(std::move(expr)) {
@@ -352,6 +370,7 @@ enum class AssignmentOperator {
 };
 class AssignmentExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> leftChildExpr;
   std::unique_ptr<ExprNode> rightChildExpr;
   AssignmentOperator assignmentOp;
@@ -366,6 +385,7 @@ public:
 
 class MagnitudeExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::variant<std::string, std::unique_ptr<PathInExprNode>> magnitude;
   MagnitudeExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
     kind = nodeKind::MagnitudeExpr;
@@ -374,6 +394,7 @@ public:
 
 class ConstExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   bool isNegative;
   std::variant<std::unique_ptr<LiteralExprNode>,
                std::unique_ptr<PathInExprNode>,
@@ -387,6 +408,7 @@ public:
 
 class ArrayTypeNode : public TypeNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<TypeNode> typeParam;
   std::unique_ptr<ConstExprNode> length;
   ArrayTypeNode(const position &pos, std::unique_ptr<TypeNode> param,
@@ -398,6 +420,7 @@ public:
 
 class ArrayExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::variant<
       std::vector<std::unique_ptr<ExprNode>>,
       std::pair<std::unique_ptr<ExprNode>, std::unique_ptr<ConstExprNode>>>
@@ -414,6 +437,7 @@ public:
 
 class IndexExprNode : public PostfixExprNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> arrayExpr;
   std::unique_ptr<ExprNode> indexExpr;
   IndexExprNode(const position &pos, std::unique_ptr<ExprNode> arrayExpr,
@@ -434,6 +458,7 @@ struct structExprField {
 
 class StructExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<PathInExprNode> path;
   std::vector<structExprField> structExprFields;
   StructExprNode(const position &pos, std::unique_ptr<PathInExprNode> path)
@@ -444,6 +469,7 @@ public:
 
 class CallExprNode : public PostfixExprNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> callee;
   std::vector<std::unique_ptr<ExprNode>> callParams;
   CallExprNode(const position &pos, std::unique_ptr<ExprNode> callee)
@@ -454,6 +480,7 @@ public:
 
 class MethodCallExprNode : public PostfixExprNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> callee;
   PathSegment callMethod;
   std::vector<std::unique_ptr<ExprNode>> callParams;
@@ -467,6 +494,7 @@ public:
 
 class ReturnExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::optional<std::unique_ptr<ExprNode>> returnValue;
   ReturnExprNode(const position &pos)
       : ExprWithoutBlockNode(pos), returnValue(std::nullopt) {
@@ -480,6 +508,7 @@ public:
 
 class AccessExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> accessObject;
   std::string identifier;
   AccessExprNode(const position &pos, std::unique_ptr<ExprNode> obj,
@@ -492,6 +521,7 @@ public:
 
 class ContinueExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   ContinueExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
     kind = nodeKind::ContinueExpr;
   }
@@ -499,6 +529,7 @@ public:
 
 class BreakExprNode : public ExprWithoutBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::optional<std::unique_ptr<ExprNode>> loopValue;
   BreakExprNode(const position &pos)
       : ExprWithoutBlockNode(pos), loopValue(std::nullopt) {
@@ -512,6 +543,7 @@ public:
 
 class EmptyStmtNode : public StmtNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   EmptyStmtNode(const position &pos) : StmtNode(pos) {
     kind = nodeKind::EmptyStmt;
   }
@@ -519,6 +551,7 @@ public:
 
 class LetStmtNode : public StmtNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   bool isMut;
   std::string identifier;
   std::optional<std::unique_ptr<TypeNode>> type;
@@ -532,6 +565,7 @@ public:
 
 class ExpressionStmtNode : public StmtNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> expr;
   bool hasSemicolon;
   ExpressionStmtNode(const position &pos) : StmtNode(pos) {
@@ -541,6 +575,7 @@ public:
 
 class BlockExprNode : public ExprWithBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::vector<std::unique_ptr<StmtNode>> statements;
   std::optional<std::unique_ptr<ExprNode>>
       tailExpr; // return value if there is a tail expression
@@ -551,6 +586,7 @@ public:
 
 class IfExprNode : public ExprWithBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> conditions;
   std::unique_ptr<BlockExprNode> body;
   std::optional<std::unique_ptr<BlockExprNode>> elseExpr;
@@ -569,6 +605,7 @@ public:
 
 class InfiniteLoopExprNode : public ExprWithBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<BlockExprNode> body;
   InfiniteLoopExprNode(const position &pos) : ExprWithBlockNode(pos) {
     kind = nodeKind::InfiniteLoopExpr;
@@ -577,6 +614,7 @@ public:
 
 class PredicateLoopExprNode : public ExprWithBlockNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<ExprNode> conditions;
   std::unique_ptr<BlockExprNode> body;
   PredicateLoopExprNode(const position &pos) : ExprWithBlockNode(pos) {
@@ -586,6 +624,7 @@ public:
 
 class CrateNode : public ASTNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::vector<std::unique_ptr<ItemNode>> items;
   CrateNode(const position &pos) : ASTNode(pos) { kind = nodeKind::Crate; }
 };
@@ -601,6 +640,7 @@ struct FunctionParam {
 };
 class FunctionDeclItemNode : public ItemNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::string identifier;
   GenericArgs args;
   std::optional<std::unique_ptr<TypeNode>> returnType;
@@ -621,6 +661,7 @@ struct StructField {
 
 class StructDeclItemNode : public ItemNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::vector<std::unique_ptr<OuterAttributeNode>> outerAttribute;
   std::string identifier;
   std::vector<StructField> structFields;
@@ -632,6 +673,7 @@ public:
 
 class ConstantDeclItemNode : public ItemNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::string identifier;
   std::unique_ptr<TypeNode> constType;
   std::unique_ptr<ConstExprNode> constValue;
@@ -646,6 +688,7 @@ public:
 
 class ImplDeclItemNode : public ItemNode {
 public:
+  virtual std::any accept(ASTVisitor *visitor) override;
   std::unique_ptr<TypeNode> implType;
   std::vector<std::variant<std::unique_ptr<ConstantDeclItemNode>,
                            std::unique_ptr<FunctionDeclItemNode>>>

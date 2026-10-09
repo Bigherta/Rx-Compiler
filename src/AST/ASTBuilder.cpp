@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,6 +35,53 @@ position getPosition(antlr4::ParserRuleContext *ctx) {
   return getPosition(ctx->getStart(), ctx->getStop());
 }
 } // namespace helper
+
+AssignmentOperator
+ASTBuilder::getAssignmentOperator(RxParser::AssignmentOperatorContext *ctx) {
+  if (ctx->equalsSign()) {
+    return AssignmentOperator::Assignment;
+  } else if (ctx->PLUS_ASSIGN()) {
+    return AssignmentOperator::additionAssignment;
+  } else if (ctx->MINUS_ASSIGN()) {
+    return AssignmentOperator::subtractionAssignment;
+  } else if (ctx->STAR_ASSIGN()) {
+    return AssignmentOperator::multiplicationAssignment;
+  } else if (ctx->SLASH_ASSIGN()) {
+    return AssignmentOperator::divisionAssignment;
+  } else if (ctx->PERCENT_ASSIGN()) {
+    return AssignmentOperator::moduloAssignment;
+  } else if (ctx->AMP_ASSIGN()) {
+    return AssignmentOperator::ANDAssignment;
+  } else if (ctx->PIPE_ASSIGN()) {
+    return AssignmentOperator::ORAssignment;
+  } else if (ctx->CARET_ASSIGN()) {
+    return AssignmentOperator::XORAssignment;
+  } else if (ctx->SHL_ASSIGN()) {
+    return AssignmentOperator::leftShiftAssignment;
+  } else if (ctx->GT() && ctx->GT_SECOND() && ctx->SHR_EQ()) {
+    // >>= is represented by three pieces of one punctuation token.
+    return AssignmentOperator::rightShiftAssignment;
+  }
+  throw std::logic_error("Unsupported assignment operator: " + ctx->getText());
+}
+
+ComparisonOperator
+ASTBuilder::getComparisonOperator(RxParser::ComparisonExceptLtContext *ctx) {
+  if (ctx->EQEQ()) {
+    return ComparisonOperator::equal;
+  } else if ((ctx->GT() && ctx->GE_EQ()) ||
+             (ctx->GT_SECOND() && ctx->SHR_EQ())) {
+    // >= can also be the remaining pieces of >>= after a generic close.
+    return ComparisonOperator::greaterThanOrEqual;
+  } else if (ctx->genericClose()) {
+    return ComparisonOperator::greaterThan;
+  } else if (ctx->LE()) {
+    return ComparisonOperator::lessThanOrEqual;
+  } else if (ctx->NE()) {
+    return ComparisonOperator::notEqual;
+  }
+  throw std::logic_error("Unsupported comparison operator: " + ctx->getText());
+}
 
 std::unique_ptr<CrateNode> ASTBuilder::visitCrate(RxParser::CrateContext *ctx) {
   auto crate = std::make_unique<CrateNode>(helper::getPosition(ctx));
@@ -193,7 +241,8 @@ ASTBuilder::visitReferenceTypeNode(RxParser::ReferenceTypeContext *ctx) {
   return nullptr;
 }
 
-GenericArgs ASTBuilder::visitGenericArgsNode(RxParser::GenericArgsContext *ctx) {
+GenericArgs
+ASTBuilder::visitGenericArgsNode(RxParser::GenericArgsContext *ctx) {
   GenericArgs args;
   if (ctx) {
     for (auto *arg : ctx->genericArg()) {
@@ -283,73 +332,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
     return visitLogicalOrExprNode(ctx->logicalOrExpression());
   }
 
-  if (ctx->assignmentOperator()->equalsSign()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::Assignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build = node
-  else if (ctx->assignmentOperator()->PLUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::additionAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build += node
-  else if (ctx->assignmentOperator()->MINUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::subtractionAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build -= node
-  else if (ctx->assignmentOperator()->STAR_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::multiplicationAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build *= node
-  else if (ctx->assignmentOperator()->SLASH_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::divisionAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build /= node
-  else if (ctx->assignmentOperator()->PERCENT_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::moduloAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build %= node
-  else if (ctx->assignmentOperator()->AMP_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ANDAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build &= node
-  else if (ctx->assignmentOperator()->PIPE_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ORAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build |= node
-  else if (ctx->assignmentOperator()->CARET_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::XORAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build ^= node
-  else if (ctx->assignmentOperator()->SHL_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::leftShiftAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build <<= node
-  else if (ctx->assignmentOperator()->SHR_EQ()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::rightShiftAssignment,
-        visitLogicalOrExprNode(ctx->logicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build >>= node
-  return nullptr;
+  return std::make_unique<AssignmentExprNode>(
+      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      visitLogicalOrExprNode(ctx->logicalOrExpression()),
+      visitExprNode(ctx->expression()));
 }
 
 std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
@@ -358,73 +344,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
     return visitLogicalOrExprNode(ctx->statementLogicalOrExpression());
   }
 
-  if (ctx->assignmentOperator()->equalsSign()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::Assignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build = node
-  else if (ctx->assignmentOperator()->PLUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::additionAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build += node
-  else if (ctx->assignmentOperator()->MINUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::subtractionAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build -= node
-  else if (ctx->assignmentOperator()->STAR_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::multiplicationAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build *= node
-  else if (ctx->assignmentOperator()->SLASH_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::divisionAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build /= node
-  else if (ctx->assignmentOperator()->PERCENT_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::moduloAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build %= node
-  else if (ctx->assignmentOperator()->AMP_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ANDAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build &= node
-  else if (ctx->assignmentOperator()->PIPE_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ORAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build |= node
-  else if (ctx->assignmentOperator()->CARET_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::XORAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build ^= node
-  else if (ctx->assignmentOperator()->SHL_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::leftShiftAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build <<= node
-  else if (ctx->assignmentOperator()->SHR_EQ()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::rightShiftAssignment,
-        visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
-        visitExprNode(ctx->expression()));
-  } // build >>= node
-  return nullptr;
+  return std::make_unique<AssignmentExprNode>(
+      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
+      visitExprNode(ctx->expression()));
 }
 
 std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
@@ -433,73 +356,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
     return visitLogicalOrExprNode(ctx->conditionLogicalOrExpression());
   }
 
-  if (ctx->assignmentOperator()->equalsSign()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::Assignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build = node
-  else if (ctx->assignmentOperator()->PLUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::additionAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build += node
-  else if (ctx->assignmentOperator()->MINUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::subtractionAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build -= node
-  else if (ctx->assignmentOperator()->STAR_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::multiplicationAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build *= node
-  else if (ctx->assignmentOperator()->SLASH_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::divisionAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build /= node
-  else if (ctx->assignmentOperator()->PERCENT_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::moduloAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build %= node
-  else if (ctx->assignmentOperator()->AMP_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ANDAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build &= node
-  else if (ctx->assignmentOperator()->PIPE_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ORAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build |= node
-  else if (ctx->assignmentOperator()->CARET_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::XORAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build ^= node
-  else if (ctx->assignmentOperator()->SHL_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::leftShiftAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build <<= node
-  else if (ctx->assignmentOperator()->SHR_EQ()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::rightShiftAssignment,
-        visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build >>= node
-  return nullptr;
+  return std::make_unique<AssignmentExprNode>(
+      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
+      visitExprNode(ctx->conditionExpression()));
 }
 
 std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
@@ -508,73 +368,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
     return visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression());
   }
 
-  if (ctx->assignmentOperator()->equalsSign()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::Assignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build = node
-  else if (ctx->assignmentOperator()->PLUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::additionAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build += node
-  else if (ctx->assignmentOperator()->MINUS_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::subtractionAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build -= node
-  else if (ctx->assignmentOperator()->STAR_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::multiplicationAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build *= node
-  else if (ctx->assignmentOperator()->SLASH_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::divisionAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build /= node
-  else if (ctx->assignmentOperator()->PERCENT_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::moduloAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build %= node
-  else if (ctx->assignmentOperator()->AMP_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ANDAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build &= node
-  else if (ctx->assignmentOperator()->PIPE_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::ORAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build |= node
-  else if (ctx->assignmentOperator()->CARET_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::XORAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build ^= node
-  else if (ctx->assignmentOperator()->SHL_ASSIGN()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::leftShiftAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build <<= node
-  else if (ctx->assignmentOperator()->SHR_EQ()) {
-    return std::make_unique<AssignmentExprNode>(
-        helper::getPosition(ctx), AssignmentOperator::rightShiftAssignment,
-        visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
-        visitExprNode(ctx->conditionExpression()));
-  } // build >>= node
-  return nullptr;
+  return std::make_unique<AssignmentExprNode>(
+      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
+      visitExprNode(ctx->conditionExpression()));
 }
 
 std::unique_ptr<ExprNode>
@@ -609,15 +406,16 @@ std::unique_ptr<ExprNode> ASTBuilder::visitLogicalOrExprNode(
   std::size_t numOfOperators = ctx->logicalAndExpression().size();
   auto terminalNode = std::make_unique<LogicExprNode>(
       helper::getPosition(ctx->getStart(),
-                          ctx->logicalAndExpression(0)->getStop()), LogicOperator::LogicOr,
+                          ctx->logicalAndExpression(0)->getStop()),
+      LogicOperator::LogicOr,
       visitLogicalAndExprNode(ctx->statementLogicalAndExpression()),
       visitLogicalAndExprNode(ctx->logicalAndExpression(0)));
   std::size_t cursor = 1;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<LogicExprNode>(
         helper::getPosition(ctx->getStart(),
-                          ctx->logicalAndExpression(cursor)->getStop()), LogicOperator::LogicOr,
-        std::move(terminalNode),
+                            ctx->logicalAndExpression(cursor)->getStop()),
+        LogicOperator::LogicOr, std::move(terminalNode),
         visitLogicalAndExprNode(ctx->logicalAndExpression(cursor)));
     ++cursor;
   }
@@ -639,10 +437,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitLogicalOrExprNode(
   std::size_t cursor = 2;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<LogicExprNode>(
-        helper::getPosition(ctx->getStart(),
-                            ctx->conditionLogicalAndExpression(cursor)->getStop()),
-        LogicOperator::LogicOr,
-        std::move(terminalNode),
+        helper::getPosition(
+            ctx->getStart(),
+            ctx->conditionLogicalAndExpression(cursor)->getStop()),
+        LogicOperator::LogicOr, std::move(terminalNode),
         visitLogicalAndExprNode(ctx->conditionLogicalAndExpression(cursor)));
     ++cursor;
   }
@@ -664,10 +462,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitLogicalOrExprNode(
   std::size_t cursor = 1;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<LogicExprNode>(
-        helper::getPosition(ctx->getStart(),
-                            ctx->conditionLogicalAndExpression(cursor)->getStop()),
-        LogicOperator::LogicOr,
-        std::move(terminalNode),
+        helper::getPosition(
+            ctx->getStart(),
+            ctx->conditionLogicalAndExpression(cursor)->getStop()),
+        LogicOperator::LogicOr, std::move(terminalNode),
         visitLogicalAndExprNode(ctx->conditionLogicalAndExpression(cursor)));
     ++cursor;
   }
@@ -691,8 +489,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitLogicalAndExprNode(
     terminalNode = std::make_unique<LogicExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->comparisonExpression(cursor)->getStop()),
-        LogicOperator::LogicAnd,
-        std::move(terminalNode),
+        LogicOperator::LogicAnd, std::move(terminalNode),
         visitComparisonExprNode(ctx->comparisonExpression(cursor)));
     ++cursor;
   }
@@ -716,8 +513,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitLogicalAndExprNode(
     terminalNode = std::make_unique<LogicExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->comparisonExpression(cursor)->getStop()),
-        LogicOperator::LogicAnd,
-        std::move(terminalNode),
+        LogicOperator::LogicAnd, std::move(terminalNode),
         visitComparisonExprNode(ctx->comparisonExpression(cursor)));
     ++cursor;
   }
@@ -739,10 +535,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitLogicalAndExprNode(
   std::size_t cursor = 2;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<LogicExprNode>(
-        helper::getPosition(ctx->getStart(),
-                            ctx->conditionComparisonExpression(cursor)->getStop()),
-        LogicOperator::LogicAnd,
-        std::move(terminalNode),
+        helper::getPosition(
+            ctx->getStart(),
+            ctx->conditionComparisonExpression(cursor)->getStop()),
+        LogicOperator::LogicAnd, std::move(terminalNode),
         visitComparisonExprNode(ctx->conditionComparisonExpression(cursor)));
     ++cursor;
   }
@@ -764,10 +560,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitLogicalAndExprNode(
   std::size_t cursor = 1;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<LogicExprNode>(
-        helper::getPosition(ctx->getStart(),
-                            ctx->conditionComparisonExpression(cursor)->getStop()),
-        LogicOperator::LogicAnd,
-        std::move(terminalNode),
+        helper::getPosition(
+            ctx->getStart(),
+            ctx->conditionComparisonExpression(cursor)->getStop()),
+        LogicOperator::LogicAnd, std::move(terminalNode),
         visitComparisonExprNode(ctx->conditionComparisonExpression(cursor)));
     ++cursor;
   }
@@ -784,34 +580,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->closedBitOrExpression()),
         visitBitOrExprNode(ctx->bitOrExpression(0)));
   } else if (ctx->comparisonExceptLt()) {
-    if (ctx->comparisonExceptLt()->EQEQ()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::equal,
-          visitBitOrExprNode(ctx->bitOrExpression(0)),
-          visitBitOrExprNode(ctx->bitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->GE_EQ() ||
-               (ctx->comparisonExceptLt()->GT_SECOND() &&
-                ctx->comparisonExceptLt()->SHR_EQ())) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThanOrEqual,
-          visitBitOrExprNode(ctx->bitOrExpression(0)),
-          visitBitOrExprNode(ctx->bitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->genericClose()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThan,
-          visitBitOrExprNode(ctx->bitOrExpression(0)),
-          visitBitOrExprNode(ctx->bitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->LE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::lessThanOrEqual,
-          visitBitOrExprNode(ctx->bitOrExpression(0)),
-          visitBitOrExprNode(ctx->bitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->NE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::notEqual,
-          visitBitOrExprNode(ctx->bitOrExpression(0)),
-          visitBitOrExprNode(ctx->bitOrExpression(1)));
-    }
+    return std::make_unique<ComparisonExprNode>(
+        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        visitBitOrExprNode(ctx->bitOrExpression(0)),
+        visitBitOrExprNode(ctx->bitOrExpression(1)));
   }
   return nullptr;
 }
@@ -826,34 +598,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->statementClosedBitOrExpression()),
         visitBitOrExprNode(ctx->bitOrExpression()));
   } else if (ctx->comparisonExceptLt()) {
-    if (ctx->comparisonExceptLt()->EQEQ()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::equal,
-          visitBitOrExprNode(ctx->statementBitOrExpression()),
-          visitBitOrExprNode(ctx->bitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->GE_EQ() ||
-               (ctx->comparisonExceptLt()->GT_SECOND() &&
-                ctx->comparisonExceptLt()->SHR_EQ())) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThanOrEqual,
-          visitBitOrExprNode(ctx->statementBitOrExpression()),
-          visitBitOrExprNode(ctx->bitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->genericClose()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThan,
-          visitBitOrExprNode(ctx->statementBitOrExpression()),
-          visitBitOrExprNode(ctx->bitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->LE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::lessThanOrEqual,
-          visitBitOrExprNode(ctx->statementBitOrExpression()),
-          visitBitOrExprNode(ctx->bitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->NE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::notEqual,
-          visitBitOrExprNode(ctx->statementBitOrExpression()),
-          visitBitOrExprNode(ctx->bitOrExpression()));
-    }
+    return std::make_unique<ComparisonExprNode>(
+        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        visitBitOrExprNode(ctx->statementBitOrExpression()),
+        visitBitOrExprNode(ctx->bitOrExpression()));
   }
   return nullptr;
 }
@@ -868,34 +616,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->conditionClosedBitOrExpression()),
         visitBitOrExprNode(ctx->conditionBitOrExpression(0)));
   } else if (ctx->comparisonExceptLt()) {
-    if (ctx->comparisonExceptLt()->EQEQ()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::equal,
-          visitBitOrExprNode(ctx->conditionBitOrExpression(0)),
-          visitBitOrExprNode(ctx->conditionBitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->GE_EQ() ||
-               (ctx->comparisonExceptLt()->GT_SECOND() &&
-                ctx->comparisonExceptLt()->SHR_EQ())) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThanOrEqual,
-          visitBitOrExprNode(ctx->conditionBitOrExpression(0)),
-          visitBitOrExprNode(ctx->conditionBitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->genericClose()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThan,
-          visitBitOrExprNode(ctx->conditionBitOrExpression(0)),
-          visitBitOrExprNode(ctx->conditionBitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->LE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::lessThanOrEqual,
-          visitBitOrExprNode(ctx->conditionBitOrExpression(0)),
-          visitBitOrExprNode(ctx->conditionBitOrExpression(1)));
-    } else if (ctx->comparisonExceptLt()->NE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::notEqual,
-          visitBitOrExprNode(ctx->conditionBitOrExpression(0)),
-          visitBitOrExprNode(ctx->conditionBitOrExpression(1)));
-    }
+    return std::make_unique<ComparisonExprNode>(
+        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        visitBitOrExprNode(ctx->conditionBitOrExpression(0)),
+        visitBitOrExprNode(ctx->conditionBitOrExpression(1)));
   }
   return nullptr;
 }
@@ -910,34 +634,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->conditionBreakClosedBitOrExpression()),
         visitBitOrExprNode(ctx->conditionBitOrExpression()));
   } else if (ctx->comparisonExceptLt()) {
-    if (ctx->comparisonExceptLt()->EQEQ()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::equal,
-          visitBitOrExprNode(ctx->conditionBreakBitOrExpression()),
-          visitBitOrExprNode(ctx->conditionBitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->GE_EQ() ||
-               (ctx->comparisonExceptLt()->GT_SECOND() &&
-                ctx->comparisonExceptLt()->SHR_EQ())) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThanOrEqual,
-          visitBitOrExprNode(ctx->conditionBreakBitOrExpression()),
-          visitBitOrExprNode(ctx->conditionBitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->genericClose()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::greaterThan,
-          visitBitOrExprNode(ctx->conditionBreakBitOrExpression()),
-          visitBitOrExprNode(ctx->conditionBitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->LE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::lessThanOrEqual,
-          visitBitOrExprNode(ctx->conditionBreakBitOrExpression()),
-          visitBitOrExprNode(ctx->conditionBitOrExpression()));
-    } else if (ctx->comparisonExceptLt()->NE()) {
-      return std::make_unique<ComparisonExprNode>(
-          helper::getPosition(ctx), ComparisonOperator::notEqual,
-          visitBitOrExprNode(ctx->conditionBreakBitOrExpression()),
-          visitBitOrExprNode(ctx->conditionBitOrExpression()));
-    }
+    return std::make_unique<ComparisonExprNode>(
+        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        visitBitOrExprNode(ctx->conditionBreakBitOrExpression()),
+        visitBitOrExprNode(ctx->conditionBitOrExpression()));
   }
   return nullptr;
 }
@@ -950,16 +650,14 @@ ASTBuilder::visitBitOrExprNode(RxParser::BitOrExpressionContext *ctx) {
   std::size_t numOfOperators = ctx->bitXorExpression().size();
   auto terminalNode = std::make_unique<BinaryExprNode>(
       helper::getPosition(ctx->getStart(), ctx->bitXorExpression(1)->getStop()),
-      BinaryOperator::BitOr,
-      visitBitXorExprNode(ctx->bitXorExpression(0)),
+      BinaryOperator::BitOr, visitBitXorExprNode(ctx->bitXorExpression(0)),
       visitBitXorExprNode(ctx->bitXorExpression(1)));
   std::size_t cursor = 2;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitXorExpression(cursor)->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode),
+        BinaryOperator::BitOr, std::move(terminalNode),
         visitBitXorExprNode(ctx->bitXorExpression(cursor)));
     ++cursor;
   }
@@ -978,7 +676,7 @@ ASTBuilder::visitBitOrExprNode(RxParser::ClosedBitOrExpressionContext *ctx) {
                 helper::getPosition(ctx), BinaryOperator::BitOr,
                 visitBitXorExprNode(ctx->bitXorExpression(0)),
                 visitBitXorExprNode(ctx->closedBitXorExpression()))
-           : std::make_unique<BinaryExprNode>(
+          : std::make_unique<BinaryExprNode>(
                 helper::getPosition(ctx->getStart(),
                                     ctx->bitXorExpression(1)->getStop()),
                 BinaryOperator::BitOr,
@@ -992,8 +690,7 @@ ASTBuilder::visitBitOrExprNode(RxParser::ClosedBitOrExpressionContext *ctx) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitXorExpression(cursor)->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode),
+        BinaryOperator::BitOr, std::move(terminalNode),
         visitBitXorExprNode(ctx->bitXorExpression(cursor)));
     ++cursor;
   }
@@ -1019,8 +716,7 @@ ASTBuilder::visitBitOrExprNode(RxParser::StatementBitOrExpressionContext *ctx) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitXorExpression(cursor)->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode),
+        BinaryOperator::BitOr, std::move(terminalNode),
         visitBitXorExprNode(ctx->bitXorExpression(cursor)));
     ++cursor;
   }
@@ -1039,7 +735,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitOrExprNode(
                 helper::getPosition(ctx), BinaryOperator::BitOr,
                 visitBitXorExprNode(ctx->statementBitXorExpression()),
                 visitBitXorExprNode(ctx->closedBitXorExpression()))
-           : std::make_unique<BinaryExprNode>(
+          : std::make_unique<BinaryExprNode>(
                 helper::getPosition(ctx->getStart(),
                                     ctx->bitXorExpression(0)->getStop()),
                 BinaryOperator::BitOr,
@@ -1053,8 +749,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitOrExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitXorExpression(cursor)->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode),
+        BinaryOperator::BitOr, std::move(terminalNode),
         visitBitXorExprNode(ctx->bitXorExpression(cursor)));
     ++cursor;
   }
@@ -1081,8 +776,7 @@ ASTBuilder::visitBitOrExprNode(RxParser::ConditionBitOrExpressionContext *ctx) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionBitXorExpression(cursor)->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode),
+        BinaryOperator::BitOr, std::move(terminalNode),
         visitBitXorExprNode(ctx->conditionBitXorExpression(cursor)));
     ++cursor;
   }
@@ -1101,9 +795,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitOrExprNode(
                 helper::getPosition(ctx), BinaryOperator::BitOr,
                 visitBitXorExprNode(ctx->conditionBitXorExpression(0)),
                 visitBitXorExprNode(ctx->conditionClosedBitXorExpression()))
-           : std::make_unique<BinaryExprNode>(
-                helper::getPosition(ctx->getStart(),
-                                    ctx->conditionBitXorExpression(1)->getStop()),
+          : std::make_unique<BinaryExprNode>(
+                helper::getPosition(
+                    ctx->getStart(),
+                    ctx->conditionBitXorExpression(1)->getStop()),
                 BinaryOperator::BitOr,
                 visitBitXorExprNode(ctx->conditionBitXorExpression(0)),
                 visitBitXorExprNode(ctx->conditionBitXorExpression(1)));
@@ -1115,8 +810,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitOrExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionBitXorExpression(cursor)->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode),
+        BinaryOperator::BitOr, std::move(terminalNode),
         visitBitXorExprNode(ctx->conditionBitXorExpression(cursor)));
     ++cursor;
   }
@@ -1143,8 +837,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitOrExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionBitXorExpression(cursor)->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode),
+        BinaryOperator::BitOr, std::move(terminalNode),
         visitBitXorExprNode(ctx->conditionBitXorExpression(cursor)));
     ++cursor;
   }
@@ -1161,8 +854,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitOrExprNode(
   for (auto *expr : ctx->conditionBitXorExpression()) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(), expr->getStop()),
-        BinaryOperator::BitOr,
-        std::move(terminalNode), visitBitXorExprNode(expr));
+        BinaryOperator::BitOr, std::move(terminalNode),
+        visitBitXorExprNode(expr));
   }
   return std::make_unique<BinaryExprNode>(
       helper::getPosition(ctx), BinaryOperator::BitOr, std::move(terminalNode),
@@ -1177,16 +870,14 @@ ASTBuilder::visitBitXorExprNode(RxParser::BitXorExpressionContext *ctx) {
   std::size_t numOfOperators = ctx->bitAndExpression().size();
   auto terminalNode = std::make_unique<BinaryExprNode>(
       helper::getPosition(ctx->getStart(), ctx->bitAndExpression(1)->getStop()),
-      BinaryOperator::BitXor,
-      visitBitAndExprNode(ctx->bitAndExpression(0)),
+      BinaryOperator::BitXor, visitBitAndExprNode(ctx->bitAndExpression(0)),
       visitBitAndExprNode(ctx->bitAndExpression(1)));
   std::size_t cursor = 2;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitAndExpression(cursor)->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode),
+        BinaryOperator::BitXor, std::move(terminalNode),
         visitBitAndExprNode(ctx->bitAndExpression(cursor)));
     ++cursor;
   }
@@ -1205,7 +896,7 @@ ASTBuilder::visitBitXorExprNode(RxParser::ClosedBitXorExpressionContext *ctx) {
                 helper::getPosition(ctx), BinaryOperator::BitXor,
                 visitBitAndExprNode(ctx->bitAndExpression(0)),
                 visitBitAndExprNode(ctx->closedBitAndExpression()))
-           : std::make_unique<BinaryExprNode>(
+          : std::make_unique<BinaryExprNode>(
                 helper::getPosition(ctx->getStart(),
                                     ctx->bitAndExpression(1)->getStop()),
                 BinaryOperator::BitXor,
@@ -1219,8 +910,7 @@ ASTBuilder::visitBitXorExprNode(RxParser::ClosedBitXorExpressionContext *ctx) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitAndExpression(cursor)->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode),
+        BinaryOperator::BitXor, std::move(terminalNode),
         visitBitAndExprNode(ctx->bitAndExpression(cursor)));
     ++cursor;
   }
@@ -1246,8 +936,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitAndExpression(cursor)->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode),
+        BinaryOperator::BitXor, std::move(terminalNode),
         visitBitAndExprNode(ctx->bitAndExpression(cursor)));
     ++cursor;
   }
@@ -1266,7 +955,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
                 helper::getPosition(ctx), BinaryOperator::BitXor,
                 visitBitAndExprNode(ctx->statementBitAndExpression()),
                 visitBitAndExprNode(ctx->closedBitAndExpression()))
-           : std::make_unique<BinaryExprNode>(
+          : std::make_unique<BinaryExprNode>(
                 helper::getPosition(ctx->getStart(),
                                     ctx->bitAndExpression(0)->getStop()),
                 BinaryOperator::BitXor,
@@ -1280,8 +969,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->bitAndExpression(cursor)->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode),
+        BinaryOperator::BitXor, std::move(terminalNode),
         visitBitAndExprNode(ctx->bitAndExpression(cursor)));
     ++cursor;
   }
@@ -1308,8 +996,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionBitAndExpression(cursor)->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode),
+        BinaryOperator::BitXor, std::move(terminalNode),
         visitBitAndExprNode(ctx->conditionBitAndExpression(cursor)));
     ++cursor;
   }
@@ -1328,9 +1015,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
                 helper::getPosition(ctx), BinaryOperator::BitXor,
                 visitBitAndExprNode(ctx->conditionBitAndExpression(0)),
                 visitBitAndExprNode(ctx->conditionClosedBitAndExpression()))
-           : std::make_unique<BinaryExprNode>(
-                helper::getPosition(ctx->getStart(),
-                                    ctx->conditionBitAndExpression(1)->getStop()),
+          : std::make_unique<BinaryExprNode>(
+                helper::getPosition(
+                    ctx->getStart(),
+                    ctx->conditionBitAndExpression(1)->getStop()),
                 BinaryOperator::BitXor,
                 visitBitAndExprNode(ctx->conditionBitAndExpression(0)),
                 visitBitAndExprNode(ctx->conditionBitAndExpression(1)));
@@ -1342,8 +1030,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionBitAndExpression(cursor)->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode),
+        BinaryOperator::BitXor, std::move(terminalNode),
         visitBitAndExprNode(ctx->conditionBitAndExpression(cursor)));
     ++cursor;
   }
@@ -1370,8 +1057,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionBitAndExpression(cursor)->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode),
+        BinaryOperator::BitXor, std::move(terminalNode),
         visitBitAndExprNode(ctx->conditionBitAndExpression(cursor)));
     ++cursor;
   }
@@ -1388,8 +1074,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitXorExprNode(
   for (auto *expr : ctx->conditionBitAndExpression()) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(), expr->getStop()),
-        BinaryOperator::BitXor,
-        std::move(terminalNode), visitBitAndExprNode(expr));
+        BinaryOperator::BitXor, std::move(terminalNode),
+        visitBitAndExprNode(expr));
   }
   return std::make_unique<BinaryExprNode>(
       helper::getPosition(ctx), BinaryOperator::BitXor, std::move(terminalNode),
@@ -1404,16 +1090,14 @@ ASTBuilder::visitBitAndExprNode(RxParser::BitAndExpressionContext *ctx) {
   std::size_t numOfOperators = ctx->shiftExpression().size();
   auto terminalNode = std::make_unique<BinaryExprNode>(
       helper::getPosition(ctx->getStart(), ctx->shiftExpression(1)->getStop()),
-      BinaryOperator::BitAnd,
-      visitShiftExprNode(ctx->shiftExpression(0)),
+      BinaryOperator::BitAnd, visitShiftExprNode(ctx->shiftExpression(0)),
       visitShiftExprNode(ctx->shiftExpression(1)));
   std::size_t cursor = 2;
   while (cursor < numOfOperators) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->shiftExpression(cursor)->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode),
+        BinaryOperator::BitAnd, std::move(terminalNode),
         visitShiftExprNode(ctx->shiftExpression(cursor)));
     ++cursor;
   }
@@ -1432,7 +1116,7 @@ ASTBuilder::visitBitAndExprNode(RxParser::ClosedBitAndExpressionContext *ctx) {
                 helper::getPosition(ctx), BinaryOperator::BitAnd,
                 visitShiftExprNode(ctx->shiftExpression(0)),
                 visitShiftExprNode(ctx->closedShiftExpression()))
-           : std::make_unique<BinaryExprNode>(
+          : std::make_unique<BinaryExprNode>(
                 helper::getPosition(ctx->getStart(),
                                     ctx->shiftExpression(1)->getStop()),
                 BinaryOperator::BitAnd,
@@ -1446,8 +1130,7 @@ ASTBuilder::visitBitAndExprNode(RxParser::ClosedBitAndExpressionContext *ctx) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->shiftExpression(cursor)->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode),
+        BinaryOperator::BitAnd, std::move(terminalNode),
         visitShiftExprNode(ctx->shiftExpression(cursor)));
     ++cursor;
   }
@@ -1473,8 +1156,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->shiftExpression(cursor)->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode),
+        BinaryOperator::BitAnd, std::move(terminalNode),
         visitShiftExprNode(ctx->shiftExpression(cursor)));
     ++cursor;
   }
@@ -1493,7 +1175,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
                 helper::getPosition(ctx), BinaryOperator::BitAnd,
                 visitShiftExprNode(ctx->statementShiftExpression()),
                 visitShiftExprNode(ctx->closedShiftExpression()))
-           : std::make_unique<BinaryExprNode>(
+          : std::make_unique<BinaryExprNode>(
                 helper::getPosition(ctx->getStart(),
                                     ctx->shiftExpression(0)->getStop()),
                 BinaryOperator::BitAnd,
@@ -1507,8 +1189,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->shiftExpression(cursor)->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode),
+        BinaryOperator::BitAnd, std::move(terminalNode),
         visitShiftExprNode(ctx->shiftExpression(cursor)));
     ++cursor;
   }
@@ -1535,8 +1216,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionShiftExpression(cursor)->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode),
+        BinaryOperator::BitAnd, std::move(terminalNode),
         visitShiftExprNode(ctx->conditionShiftExpression(cursor)));
     ++cursor;
   }
@@ -1555,9 +1235,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
                 helper::getPosition(ctx), BinaryOperator::BitAnd,
                 visitShiftExprNode(ctx->conditionShiftExpression(0)),
                 visitShiftExprNode(ctx->conditionClosedShiftExpression()))
-           : std::make_unique<BinaryExprNode>(
-                helper::getPosition(ctx->getStart(),
-                                    ctx->conditionShiftExpression(1)->getStop()),
+          : std::make_unique<BinaryExprNode>(
+                helper::getPosition(
+                    ctx->getStart(),
+                    ctx->conditionShiftExpression(1)->getStop()),
                 BinaryOperator::BitAnd,
                 visitShiftExprNode(ctx->conditionShiftExpression(0)),
                 visitShiftExprNode(ctx->conditionShiftExpression(1)));
@@ -1569,8 +1250,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionShiftExpression(cursor)->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode),
+        BinaryOperator::BitAnd, std::move(terminalNode),
         visitShiftExprNode(ctx->conditionShiftExpression(cursor)));
     ++cursor;
   }
@@ -1597,8 +1277,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(),
                             ctx->conditionShiftExpression(cursor)->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode),
+        BinaryOperator::BitAnd, std::move(terminalNode),
         visitShiftExprNode(ctx->conditionShiftExpression(cursor)));
     ++cursor;
   }
@@ -1614,8 +1293,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitBitAndExprNode(
   for (auto *expr : ctx->conditionShiftExpression()) {
     terminalNode = std::make_unique<BinaryExprNode>(
         helper::getPosition(ctx->getStart(), expr->getStop()),
-        BinaryOperator::BitAnd,
-        std::move(terminalNode), visitShiftExprNode(expr));
+        BinaryOperator::BitAnd, std::move(terminalNode),
+        visitShiftExprNode(expr));
   }
   return std::make_unique<BinaryExprNode>(
       helper::getPosition(ctx), BinaryOperator::BitAnd, std::move(terminalNode),
@@ -2051,7 +1730,8 @@ ASTBuilder::visitShiftExprNode(RxParser::ConditionShiftExpressionContext *ctx) {
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)->getStop()),
+                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionClosedAdditiveExpression(shiftLeftCursor)));
@@ -2061,7 +1741,8 @@ ASTBuilder::visitShiftExprNode(RxParser::ConditionShiftExpressionContext *ctx) {
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionAdditiveExpression(shiftRightCursor)->getStop()),
+                  ctx->conditionAdditiveExpression(shiftRightCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionAdditiveExpression(shiftRightCursor)));
@@ -2090,7 +1771,8 @@ ASTBuilder::visitShiftExprNode(RxParser::ConditionShiftExpressionContext *ctx) {
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)->getStop()),
+                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionClosedAdditiveExpression(shiftLeftCursor)));
@@ -2100,7 +1782,8 @@ ASTBuilder::visitShiftExprNode(RxParser::ConditionShiftExpressionContext *ctx) {
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionAdditiveExpression(shiftRightCursor)->getStop()),
+                  ctx->conditionAdditiveExpression(shiftRightCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionAdditiveExpression(shiftRightCursor)));
@@ -2152,7 +1835,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitShiftExprNode(
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)->getStop()),
+                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionClosedAdditiveExpression(shiftLeftCursor)));
@@ -2162,7 +1846,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitShiftExprNode(
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionAdditiveExpression(shiftRightCursor)->getStop()),
+                  ctx->conditionAdditiveExpression(shiftRightCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionAdditiveExpression(shiftRightCursor)));
@@ -2193,7 +1878,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitShiftExprNode(
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)->getStop()),
+                  ctx->conditionClosedAdditiveExpression(shiftLeftCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionClosedAdditiveExpression(shiftLeftCursor)));
@@ -2203,7 +1889,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitShiftExprNode(
           terminalNode = std::make_unique<BinaryExprNode>(
               helper::getPosition(
                   ctx->getStart(),
-                  ctx->conditionAdditiveExpression(shiftRightCursor)->getStop()),
+                  ctx->conditionAdditiveExpression(shiftRightCursor)
+                      ->getStop()),
               lastOp, std::move(terminalNode),
               visitAdditiveExprNode(
                   ctx->conditionAdditiveExpression(shiftRightCursor)));
@@ -2250,7 +1937,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitShiftExprNode(
       terminalNode = std::make_unique<BinaryExprNode>(
           helper::getPosition(
               ctx->getStart(),
-              ctx->conditionClosedAdditiveExpression(shiftLeftCursor)->getStop()),
+              ctx->conditionClosedAdditiveExpression(shiftLeftCursor)
+                  ->getStop()),
           lastOp, std::move(terminalNode),
           visitAdditiveExprNode(
               ctx->conditionClosedAdditiveExpression(shiftLeftCursor)));
@@ -2302,7 +1990,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitShiftExprNode(
       terminalNode = std::make_unique<BinaryExprNode>(
           helper::getPosition(
               ctx->getStart(),
-              ctx->conditionClosedAdditiveExpression(shiftLeftCursor)->getStop()),
+              ctx->conditionClosedAdditiveExpression(shiftLeftCursor)
+                  ->getStop()),
           lastOp, std::move(terminalNode),
           visitAdditiveExprNode(
               ctx->conditionClosedAdditiveExpression(shiftLeftCursor)));
@@ -2414,9 +2103,9 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAdditiveExprNode(
           mulOp = BinaryOperator::Sub;
         }
         terminalNode = std::make_unique<BinaryExprNode>(
-            helper::getPosition(ctx->getStart(),
-                                closedExpr != nullptr ? closedExpr->getStop()
-                                                      : expr->getStop()),
+            helper::getPosition(ctx->getStart(), closedExpr != nullptr
+                                                     ? closedExpr->getStop()
+                                                     : expr->getStop()),
             mulOp, std::move(terminalNode),
             closedExpr != nullptr ? visitMultiplicativeExprNode(closedExpr)
                                   : visitMultiplicativeExprNode(expr));
@@ -2469,7 +2158,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAdditiveExprNode(
             ctx->getStart(),
             cursor == numOfOperators - 1
                 ? ctx->conditionClosedMultiplicativeExpression()->getStop()
-                : ctx->conditionMultiplicativeExpression(cursor + 1)->getStop()),
+                : ctx->conditionMultiplicativeExpression(cursor + 1)
+                      ->getStop()),
         ctx->additiveOperator(cursor)->PLUS() ? BinaryOperator::Add
                                               : BinaryOperator::Sub,
         std::move(terminalNode),
@@ -2575,11 +2265,10 @@ std::unique_ptr<ExprNode> ASTBuilder::visitMultiplicativeExprNode(
       op = BinaryOperator::Mod;
     }
     terminalNode = std::make_unique<BinaryExprNode>(
-        helper::getPosition(
-            ctx->getStart(),
-            cursor == numOfOperators - 1
-                ? ctx->closedCastExpression()->getStop()
-                : ctx->castExpression(cursor + 1)->getStop()),
+        helper::getPosition(ctx->getStart(),
+                            cursor == numOfOperators - 1
+                                ? ctx->closedCastExpression()->getStop()
+                                : ctx->castExpression(cursor + 1)->getStop()),
         op, std::move(terminalNode),
         cursor == numOfOperators - 1
             ? visitCastExprNode(ctx->closedCastExpression())
@@ -2636,9 +2325,9 @@ std::unique_ptr<ExprNode> ASTBuilder::visitMultiplicativeExprNode(
       mulOp = BinaryOperator::Mod;
     }
     terminalNode = std::make_unique<BinaryExprNode>(
-        helper::getPosition(ctx->getStart(),
-                            closedExpr != nullptr ? closedExpr->getStop()
-                                                  : expr->getStop()),
+        helper::getPosition(ctx->getStart(), closedExpr != nullptr
+                                                 ? closedExpr->getStop()
+                                                 : expr->getStop()),
         mulOp, std::move(terminalNode),
         closedExpr != nullptr ? visitCastExprNode(closedExpr)
                               : visitCastExprNode(expr));
@@ -2671,8 +2360,9 @@ std::unique_ptr<ExprNode> ASTBuilder::visitMultiplicativeExprNode(
       op = BinaryOperator::Mod;
     }
     terminalNode = std::make_unique<BinaryExprNode>(
-        helper::getPosition(ctx->getStart(),
-                            ctx->conditionCastExpression(cursor + 1)->getStop()),
+        helper::getPosition(
+            ctx->getStart(),
+            ctx->conditionCastExpression(cursor + 1)->getStop()),
         op, std::move(terminalNode),
         visitCastExprNode(ctx->conditionCastExpression(cursor + 1)));
   }
@@ -2772,7 +2462,8 @@ ASTBuilder::visitCastExprNode(RxParser::CastExpressionContext *ctx) {
   auto terminalNode = visitUnaryExprNode(ctx->unaryExpression());
   for (auto *type : ctx->typeRef()) {
     terminalNode = std::make_unique<CastExprNode>(
-        helper::getPosition(ctx->getStart(), type->getStop()), visitTypeNode(type), std::move(terminalNode));
+        helper::getPosition(ctx->getStart(), type->getStop()),
+        visitTypeNode(type), std::move(terminalNode));
   }
   return terminalNode;
 }
@@ -3039,12 +2730,13 @@ ASTBuilder::visitPostfixExprNode(RxParser::PostfixExpressionContext *ctx) {
   for (auto *suffix : ctx->postfixSuffix()) {
     if (suffix->expression()) {
       terminalNode = std::make_unique<IndexExprNode>(
-          helper::getPosition(ctx->getStart(), suffix->getStop()), std::move(terminalNode),
-          visitExprNode(suffix->expression()));
+          helper::getPosition(ctx->getStart(), suffix->getStop()),
+          std::move(terminalNode), visitExprNode(suffix->expression()));
     }
     if (suffix->callArguments()) {
-      terminalNode = std::make_unique<CallExprNode>(helper::getPosition(ctx->getStart(), suffix->getStop()),
-                                                    std::move(terminalNode));
+      terminalNode = std::make_unique<CallExprNode>(
+          helper::getPosition(ctx->getStart(), suffix->getStop()),
+          std::move(terminalNode));
       auto *derivedNode = dynamic_cast<CallExprNode *>(terminalNode.get());
       for (auto *param : suffix->callArguments()->expression()) {
         derivedNode->callParams.push_back(visitExprNode(param));
@@ -3053,7 +2745,8 @@ ASTBuilder::visitPostfixExprNode(RxParser::PostfixExpressionContext *ctx) {
     if (suffix->dotSuffix()) {
       if (suffix->dotSuffix()->identifier()) {
         terminalNode = std::make_unique<AccessExprNode>(
-            helper::getPosition(ctx->getStart(), suffix->getStop()), std::move(terminalNode),
+            helper::getPosition(ctx->getStart(), suffix->getStop()),
+            std::move(terminalNode),
             suffix->dotSuffix()->identifier()->getText());
       } else {
         auto *segment = suffix->dotSuffix()->pathExprSegment();
@@ -3061,7 +2754,8 @@ ASTBuilder::visitPostfixExprNode(RxParser::PostfixExpressionContext *ctx) {
         seg.pathIdentSegment = segment->pathIdentSegment()->getText();
         seg.args = visitGenericArgsNode(segment->genericArgs());
         auto call = std::make_unique<MethodCallExprNode>(
-            helper::getPosition(ctx->getStart(), suffix->getStop()), std::move(terminalNode), std::move(seg));
+            helper::getPosition(ctx->getStart(), suffix->getStop()),
+            std::move(terminalNode), std::move(seg));
         for (auto *param : suffix->dotSuffix()->callArguments()->expression()) {
           call->callParams.push_back(visitExprNode(param));
         }
@@ -3080,8 +2774,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
       if (suffix->expression()) {
         terminalNode = std::make_unique<IndexExprNode>(
             helper::getPosition(ctx->getStart(), suffix->getStop()),
-            std::move(terminalNode),
-            visitExprNode(suffix->expression()));
+            std::move(terminalNode), visitExprNode(suffix->expression()));
       }
       if (suffix->callArguments()) {
         terminalNode = std::make_unique<CallExprNode>(
@@ -3105,8 +2798,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
           seg.args = visitGenericArgsNode(segment->genericArgs());
           auto call = std::make_unique<MethodCallExprNode>(
               helper::getPosition(ctx->getStart(), suffix->getStop()),
-              std::move(terminalNode),
-              std::move(seg));
+              std::move(terminalNode), std::move(seg));
           for (auto *param :
                suffix->dotSuffix()->callArguments()->expression()) {
             call->callParams.push_back(visitExprNode(param));
@@ -3121,8 +2813,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
     if (ctx->dotSuffix()->identifier()) {
       terminalNode = std::make_unique<AccessExprNode>(
           helper::getPosition(ctx->getStart(), ctx->dotSuffix()->getStop()),
-          std::move(terminalNode),
-          ctx->dotSuffix()->identifier()->getText());
+          std::move(terminalNode), ctx->dotSuffix()->identifier()->getText());
     } else {
       auto *segment = ctx->dotSuffix()->pathExprSegment();
       PathSegment seg;
@@ -3140,8 +2831,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
       if (suffix->expression()) {
         terminalNode = std::make_unique<IndexExprNode>(
             helper::getPosition(ctx->getStart(), suffix->getStop()),
-            std::move(terminalNode),
-            visitExprNode(suffix->expression()));
+            std::move(terminalNode), visitExprNode(suffix->expression()));
       }
       if (suffix->callArguments()) {
         terminalNode = std::make_unique<CallExprNode>(
@@ -3165,8 +2855,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
           seg.args = visitGenericArgsNode(segment->genericArgs());
           auto call = std::make_unique<MethodCallExprNode>(
               helper::getPosition(ctx->getStart(), suffix->getStop()),
-              std::move(terminalNode),
-              std::move(seg));
+              std::move(terminalNode), std::move(seg));
           for (auto *param :
                suffix->dotSuffix()->callArguments()->expression()) {
             call->callParams.push_back(visitExprNode(param));
@@ -3186,8 +2875,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
     if (suffix->expression()) {
       terminalNode = std::make_unique<IndexExprNode>(
           helper::getPosition(ctx->getStart(), suffix->getStop()),
-          std::move(terminalNode),
-          visitExprNode(suffix->expression()));
+          std::move(terminalNode), visitExprNode(suffix->expression()));
     }
     if (suffix->callArguments()) {
       terminalNode = std::make_unique<CallExprNode>(
@@ -3230,8 +2918,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
     if (suffix->expression()) {
       terminalNode = std::make_unique<IndexExprNode>(
           helper::getPosition(ctx->getStart(), suffix->getStop()),
-          std::move(terminalNode),
-          visitExprNode(suffix->expression()));
+          std::move(terminalNode), visitExprNode(suffix->expression()));
     }
     if (suffix->callArguments()) {
       auto call = std::make_unique<CallExprNode>(
@@ -3246,8 +2933,7 @@ std::unique_ptr<ExprNode> ASTBuilder::visitPostfixExprNode(
       if (dot->identifier()) {
         terminalNode = std::make_unique<AccessExprNode>(
             helper::getPosition(ctx->getStart(), suffix->getStop()),
-            std::move(terminalNode),
-            dot->identifier()->getText());
+            std::move(terminalNode), dot->identifier()->getText());
       } else {
         auto *segment = dot->pathExprSegment();
         PathSegment seg;

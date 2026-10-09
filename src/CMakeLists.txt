@@ -30,10 +30,19 @@ add_library(rx_parser STATIC
   Parser/RxParserVisitor.h
   Parser/RxParserBaseVisitor.cpp
   Parser/RxParserBaseVisitor.h
+  AST/AST.hpp
+  AST/AST.cpp
   AST/ASTBuilder.hpp
   AST/ASTBuilder.cpp
+  ASTVisitor/ASTVisitor.hpp
+  ASTVisitor/ASTPrinter.hpp
+  ASTVisitor/ASTPrinter.cpp
 )
-target_include_directories(rx_parser PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Parser")
+target_include_directories(rx_parser PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/Parser"
+  "${CMAKE_CURRENT_SOURCE_DIR}/AST"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ASTVisitor"
+)
 target_link_libraries(rx_parser PUBLIC antlr4_static)
 
 add_executable(rx_compiler main.cpp)
