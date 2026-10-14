@@ -1,4 +1,3 @@
-#include "ANTLRInputStream.h"
 #include "RxLexer.h"
 #include "RxParser.h"
 #include <fstream>

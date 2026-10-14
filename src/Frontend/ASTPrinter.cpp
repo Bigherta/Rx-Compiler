@@ -173,8 +173,7 @@ std::any ASTPrinter::visitPathInType(PathInTypeNode *node) {
 }
 
 std::any ASTPrinter::visitReferenceType(ReferenceTypeNode *node) {
-  std::cout << "Reference Type "
-            << (node->refKind == ReferenceKind::AMP ? "&" : "&&")
+  std::cout << "Reference Type &"
             << (node->isMut ? "mut" : "") << '\n';
   std::cout << prefix << "└── ";
   const std::string oldPrefix = prefix;
@@ -415,9 +414,7 @@ std::any ASTPrinter::visitCastExpr(CastExprNode *node) {
 }
 
 std::any ASTPrinter::visitBorrowExpr(BorrowExprNode *node) {
-  std::cout << "Borrow Expr "
-            << (node->refOp == ReferenceUnaryOperator::AMP ? "&" : "&&")
-            << (node->isMut ? "mut" : "") << '\n';
+  std::cout << "Borrow Expr &" << (node->isMut ? "mut" : "") << '\n';
   std::cout << prefix << "└── ";
   const std::string oldPrefix = prefix;
   prefix += "    ";

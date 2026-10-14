@@ -1,5 +1,14 @@
 #include "AST.hpp"
-#include "../ASTVisitor/ASTVisitor.hpp"
+#include "../Frontend/ASTVisitor.hpp"
+
+// Type is complete here, so unique_ptr<Type> can be safely destroyed.
+ExprNode &ExprNode::operator=(ExprNode &&) noexcept = default;
+
+ExprNode::~ExprNode() = default;
+
+PathInExprNode &PathInExprNode::operator=(PathInExprNode &&) noexcept = default;
+
+PathInExprNode::~PathInExprNode() = default;
 
 std::any CrateNode::accept(ASTVisitor *visitor) {
   return visitor->visitCrate(this);

@@ -230,13 +230,19 @@ ASTBuilder::visitArrayTypeNode(RxParser::ArrayTypeContext *ctx) {
 std::unique_ptr<TypeNode>
 ASTBuilder::visitReferenceTypeNode(RxParser::ReferenceTypeContext *ctx) {
   if (ctx->AMP()) {
-    return std::make_unique<ReferenceTypeNode>(
-        helper::getPosition(ctx), ctx->MUT() != nullptr,
-        visitTypeNode(ctx->typeRef()), ReferenceKind::AMP);
+    return std::make_unique<ReferenceTypeNode>(helper::getPosition(ctx),
+                                               ctx->MUT() != nullptr,
+                                               visitTypeNode(ctx->typeRef()));
   } else if (ctx->ANDAND()) {
+    const auto outerPos = helper::getPosition(ctx);
+    const auto ampPos = helper::getPosition(ctx->ANDAND());
+    auto innerPos = outerPos;
+    innerPos.startLine = ampPos.startLine;
+    innerPos.startColumn = ampPos.startColumn + 1;
     return std::make_unique<ReferenceTypeNode>(
-        helper::getPosition(ctx), ctx->MUT() != nullptr,
-        visitTypeNode(ctx->typeRef()), ReferenceKind::ANDAND);
+        outerPos, false,
+        std::make_unique<ReferenceTypeNode>(innerPos, ctx->MUT() != nullptr,
+                                          visitTypeNode(ctx->typeRef())));
   }
   return nullptr;
 }
@@ -333,7 +339,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
   }
 
   return std::make_unique<AssignmentExprNode>(
-      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      helper::getPosition(ctx),
+      getAssignmentOperator(ctx->assignmentOperator()),
       visitLogicalOrExprNode(ctx->logicalOrExpression()),
       visitExprNode(ctx->expression()));
 }
@@ -345,7 +352,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
   }
 
   return std::make_unique<AssignmentExprNode>(
-      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      helper::getPosition(ctx),
+      getAssignmentOperator(ctx->assignmentOperator()),
       visitLogicalOrExprNode(ctx->statementLogicalOrExpression()),
       visitExprNode(ctx->expression()));
 }
@@ -357,7 +365,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
   }
 
   return std::make_unique<AssignmentExprNode>(
-      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      helper::getPosition(ctx),
+      getAssignmentOperator(ctx->assignmentOperator()),
       visitLogicalOrExprNode(ctx->conditionLogicalOrExpression()),
       visitExprNode(ctx->conditionExpression()));
 }
@@ -369,7 +378,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitAssignmentExprNode(
   }
 
   return std::make_unique<AssignmentExprNode>(
-      helper::getPosition(ctx), getAssignmentOperator(ctx->assignmentOperator()),
+      helper::getPosition(ctx),
+      getAssignmentOperator(ctx->assignmentOperator()),
       visitLogicalOrExprNode(ctx->conditionBreakLogicalOrExpression()),
       visitExprNode(ctx->conditionExpression()));
 }
@@ -581,7 +591,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->bitOrExpression(0)));
   } else if (ctx->comparisonExceptLt()) {
     return std::make_unique<ComparisonExprNode>(
-        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        helper::getPosition(ctx),
+        getComparisonOperator(ctx->comparisonExceptLt()),
         visitBitOrExprNode(ctx->bitOrExpression(0)),
         visitBitOrExprNode(ctx->bitOrExpression(1)));
   }
@@ -599,7 +610,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->bitOrExpression()));
   } else if (ctx->comparisonExceptLt()) {
     return std::make_unique<ComparisonExprNode>(
-        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        helper::getPosition(ctx),
+        getComparisonOperator(ctx->comparisonExceptLt()),
         visitBitOrExprNode(ctx->statementBitOrExpression()),
         visitBitOrExprNode(ctx->bitOrExpression()));
   }
@@ -617,7 +629,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->conditionBitOrExpression(0)));
   } else if (ctx->comparisonExceptLt()) {
     return std::make_unique<ComparisonExprNode>(
-        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        helper::getPosition(ctx),
+        getComparisonOperator(ctx->comparisonExceptLt()),
         visitBitOrExprNode(ctx->conditionBitOrExpression(0)),
         visitBitOrExprNode(ctx->conditionBitOrExpression(1)));
   }
@@ -635,7 +648,8 @@ std::unique_ptr<ExprNode> ASTBuilder::visitComparisonExprNode(
         visitBitOrExprNode(ctx->conditionBitOrExpression()));
   } else if (ctx->comparisonExceptLt()) {
     return std::make_unique<ComparisonExprNode>(
-        helper::getPosition(ctx), getComparisonOperator(ctx->comparisonExceptLt()),
+        helper::getPosition(ctx),
+        getComparisonOperator(ctx->comparisonExceptLt()),
         visitBitOrExprNode(ctx->conditionBreakBitOrExpression()),
         visitBitOrExprNode(ctx->conditionBitOrExpression()));
   }
@@ -2556,11 +2570,17 @@ ASTBuilder::visitClosedCastTypeNode(RxParser::ClosedCastTypeContext *ctx) {
   if (ctx->AMP()) {
     return std::make_unique<ReferenceTypeNode>(
         helper::getPosition(ctx), ctx->MUT() != nullptr,
-        visitClosedCastTypeNode(ctx->closedCastType()), ReferenceKind::AMP);
+        visitClosedCastTypeNode(ctx->closedCastType()));
   } else if (ctx->ANDAND()) {
+    const auto ampPos = helper::getPosition(ctx->ANDAND());
+    auto innerPos = pos;
+    innerPos.startLine = ampPos.startLine;
+    innerPos.startColumn = ampPos.startColumn + 1;
     return std::make_unique<ReferenceTypeNode>(
-        helper::getPosition(ctx), ctx->MUT() != nullptr,
-        visitClosedCastTypeNode(ctx->closedCastType()), ReferenceKind::ANDAND);
+        pos, false,
+        std::make_unique<ReferenceTypeNode>(
+            innerPos, ctx->MUT() != nullptr,
+            visitClosedCastTypeNode(ctx->closedCastType())));
   }
 
   auto path = std::make_unique<PathInTypeNode>(pos);
@@ -2585,14 +2605,19 @@ ASTBuilder::visitUnaryExprNode(RxParser::UnaryExpressionContext *ctx) {
     if (unaryOp->AMP()) {
       return std::make_unique<BorrowExprNode>(
           helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::AMP,
           visitUnaryExprNode(ctx->unaryExpression()));
     }
     if (unaryOp->ANDAND()) {
+      const auto outerPos = helper::getPosition(ctx);
+      const auto ampPos = helper::getPosition(unaryOp->ANDAND());
+      auto innerPos = outerPos;
+      innerPos.startLine = ampPos.startLine;
+      innerPos.startColumn = ampPos.startColumn + 1;
       return std::make_unique<BorrowExprNode>(
-          helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::ANDAND,
-          visitUnaryExprNode(ctx->unaryExpression()));
+          outerPos, false,
+          std::make_unique<BorrowExprNode>(
+              innerPos, unaryOp->MUT() != nullptr,
+              visitUnaryExprNode(ctx->unaryExpression())));
     }
     if (unaryOp->MINUS()) {
       return std::make_unique<UnaryExprNode>(
@@ -2621,14 +2646,19 @@ ASTBuilder::visitUnaryExprNode(RxParser::StatementUnaryExpressionContext *ctx) {
     if (unaryOp->AMP()) {
       return std::make_unique<BorrowExprNode>(
           helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::AMP,
           visitUnaryExprNode(ctx->unaryExpression()));
     }
     if (unaryOp->ANDAND()) {
+      const auto outerPos = helper::getPosition(ctx);
+      const auto ampPos = helper::getPosition(unaryOp->ANDAND());
+      auto innerPos = outerPos;
+      innerPos.startLine = ampPos.startLine;
+      innerPos.startColumn = ampPos.startColumn + 1;
       return std::make_unique<BorrowExprNode>(
-          helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::ANDAND,
-          visitUnaryExprNode(ctx->unaryExpression()));
+          outerPos, false,
+          std::make_unique<BorrowExprNode>(
+              innerPos, unaryOp->MUT() != nullptr,
+              visitUnaryExprNode(ctx->unaryExpression())));
     }
     if (unaryOp->MINUS()) {
       return std::make_unique<UnaryExprNode>(
@@ -2657,14 +2687,19 @@ ASTBuilder::visitUnaryExprNode(RxParser::ConditionUnaryExpressionContext *ctx) {
     if (unaryOp->AMP()) {
       return std::make_unique<BorrowExprNode>(
           helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::AMP,
           visitUnaryExprNode(ctx->conditionUnaryExpression()));
     }
     if (unaryOp->ANDAND()) {
+      const auto outerPos = helper::getPosition(ctx);
+      const auto ampPos = helper::getPosition(unaryOp->ANDAND());
+      auto innerPos = outerPos;
+      innerPos.startLine = ampPos.startLine;
+      innerPos.startColumn = ampPos.startColumn + 1;
       return std::make_unique<BorrowExprNode>(
-          helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::ANDAND,
-          visitUnaryExprNode(ctx->conditionUnaryExpression()));
+          outerPos, false,
+          std::make_unique<BorrowExprNode>(
+              innerPos, unaryOp->MUT() != nullptr,
+              visitUnaryExprNode(ctx->conditionUnaryExpression())));
     }
     if (unaryOp->MINUS()) {
       return std::make_unique<UnaryExprNode>(
@@ -2694,14 +2729,19 @@ std::unique_ptr<ExprNode> ASTBuilder::visitUnaryExprNode(
     if (unaryOp->AMP()) {
       return std::make_unique<BorrowExprNode>(
           helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::AMP,
           visitUnaryExprNode(ctx->conditionUnaryExpression()));
     }
     if (unaryOp->ANDAND()) {
+      const auto outerPos = helper::getPosition(ctx);
+      const auto ampPos = helper::getPosition(unaryOp->ANDAND());
+      auto innerPos = outerPos;
+      innerPos.startLine = ampPos.startLine;
+      innerPos.startColumn = ampPos.startColumn + 1;
       return std::make_unique<BorrowExprNode>(
-          helper::getPosition(ctx), unaryOp->MUT() != nullptr,
-          ReferenceUnaryOperator::ANDAND,
-          visitUnaryExprNode(ctx->conditionUnaryExpression()));
+          outerPos, false,
+          std::make_unique<BorrowExprNode>(
+              innerPos, unaryOp->MUT() != nullptr,
+              visitUnaryExprNode(ctx->conditionUnaryExpression())));
     }
     if (unaryOp->MINUS()) {
       return std::make_unique<UnaryExprNode>(

@@ -8,11 +8,27 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
 struct position {
   std::size_t startLine;
   std::size_t startColumn;
   std::size_t endLine;
   std::size_t endColumn;
+  bool operator==(const position &other) const {
+    return startLine == other.startLine && startColumn == other.startColumn &&
+           endLine == other.endLine && endColumn == other.endColumn;
+  }
+  bool operator<(const position &other) const {
+    if (startLine != other.startLine) {
+      return startLine < other.startLine;
+    } else if (startColumn != other.startColumn) {
+      return startColumn < other.startColumn;
+    } else if (endLine != other.endLine) {
+      return endLine < other.endColumn;
+    } else {
+      return endColumn < other.endColumn;
+    }
+  }
 }; // Source positions use [start, end).
 
 enum class nodeKind {
@@ -79,11 +95,15 @@ public:
   virtual ~ASTNode() = default;
   virtual std::any accept(ASTVisitor *visitor) = 0;
 };
-
+struct Type;
+struct LocalSymbol;
 class TypeNode : public ASTNode {
 public:
-  using ASTNode::ASTNode;
-  virtual ~TypeNode() = default;
+  std::unique_ptr<Type> actualType;
+  TypeNode(const position &pos);
+  TypeNode(TypeNode &&) noexcept;
+  TypeNode &operator=(TypeNode &&) noexcept;
+  virtual ~TypeNode();
 };
 
 class ItemNode : public ASTNode {
@@ -94,19 +114,26 @@ public:
 
 class ExprNode : public ASTNode {
 public:
-  using ASTNode::ASTNode;
-  virtual ~ExprNode() = default;
+  std::unique_ptr<Type> exprType;
+  ExprNode(const position &pos);
+  ExprNode(ExprNode &&) noexcept;
+  ExprNode &operator=(ExprNode &&) noexcept;
+  virtual ~ExprNode();
 };
 
 class ExprWithBlockNode : public ExprNode {
 public:
   using ExprNode::ExprNode;
+  ExprWithBlockNode(ExprWithBlockNode &&) noexcept = default;
+  ExprWithBlockNode &operator=(ExprWithBlockNode &&) noexcept = default;
   virtual ~ExprWithBlockNode() = default;
 };
 
 class ExprWithoutBlockNode : public ExprNode {
 public:
   using ExprNode::ExprNode;
+  ExprWithoutBlockNode(ExprWithoutBlockNode &&) noexcept = default;
+  ExprWithoutBlockNode &operator=(ExprWithoutBlockNode &&) noexcept = default;
   virtual ~ExprWithoutBlockNode() = default;
 };
 
@@ -161,20 +188,14 @@ public:
   }
 };
 
-enum class ReferenceKind {
-  AMP,
-  ANDAND,
-};
 class ReferenceTypeNode : public TypeNode {
 public:
   virtual std::any accept(ASTVisitor *visitor) override;
   bool isMut;
-  ReferenceKind refKind;
   std::unique_ptr<TypeNode> refType;
   ReferenceTypeNode(const position &pos, bool isMutable,
-                    std::unique_ptr<TypeNode> type, ReferenceKind kind)
-      : TypeNode(pos), isMut(isMutable), refKind(kind),
-        refType(std::move(type)) {
+                    std::unique_ptr<TypeNode> type)
+      : TypeNode(pos), isMut(isMutable), refType(std::move(type)) {
     this->kind = nodeKind::ReferenceType;
   }
 };
@@ -207,9 +228,12 @@ class PathInExprNode : public ExprWithoutBlockNode {
 public:
   virtual std::any accept(ASTVisitor *visitor) override;
   PathNode path;
-  PathInExprNode(const position &pos) : ExprWithoutBlockNode(pos) {
-    kind = nodeKind::PathInExpr;
-  }
+  std::unique_ptr<LocalSymbol> symbol;
+  std::unique_ptr<Type> varType;
+  PathInExprNode(const position &pos);
+  PathInExprNode(PathInExprNode &&) noexcept;
+  PathInExprNode &operator=(PathInExprNode &&) noexcept;
+  virtual ~PathInExprNode();
 };
 
 class LiteralExprNode : public ExprWithoutBlockNode {
@@ -326,21 +350,14 @@ public:
   }
 };
 
-enum class ReferenceUnaryOperator {
-  AMP,
-  ANDAND,
-};
-
 class BorrowExprNode : public ExprWithoutBlockNode {
 public:
   virtual std::any accept(ASTVisitor *visitor) override;
   bool isMut;
-  ReferenceUnaryOperator refOp;
   std::unique_ptr<ExprNode> borrowExpr;
-  BorrowExprNode(const position &pos, bool isMut, ReferenceUnaryOperator op,
+  BorrowExprNode(const position &pos, bool isMut,
                  std::unique_ptr<ExprNode> expr)
-      : ExprWithoutBlockNode(pos), isMut(isMut), refOp(op),
-        borrowExpr(std::move(expr)) {
+      : ExprWithoutBlockNode(pos), isMut(isMut), borrowExpr(std::move(expr)) {
     kind = nodeKind::BorrowExpr;
   }
 };
@@ -405,6 +422,88 @@ public:
     kind = nodeKind::ConstExpr;
   }
 };
+
+enum class TypeKind {
+  I32,
+  U32,
+  Isize,
+  Usize,
+  Bool,
+  Unit,
+  Never,
+  Error,
+  MutReference,
+  ImmutReference,
+  Array,
+  Vec,
+  Box,
+  Struct
+};
+
+struct ConstValue {
+  ConstExprNode *ctx; // first pass store the AST context
+  bool evaluated = false;
+  std::variant<int, bool> value; // second pass calculate the value
+};
+
+struct Type {
+  TypeKind kind;
+  std::optional<std::string> structName;
+  std::optional<ConstValue> arrayLen;
+  std::unique_ptr<Type>
+      elementType; // for the inner type of Reference, Array, Vec or Box
+  Type() = default;
+  explicit Type(TypeKind kind) : kind(kind) {}
+  explicit Type(const std::string &name) : structName(name) {
+    kind = TypeKind::Struct;
+  }
+  Type(const Type &other) {
+    kind = other.kind;
+    structName = other.structName;
+    arrayLen = other.arrayLen;
+    if (other.elementType) {
+      elementType = std::make_unique<Type>(*other.elementType);
+    } else
+      elementType = nullptr;
+  }
+  Type &operator=(const Type &other) {
+    if (this == &other)
+      return *this;
+    kind = other.kind;
+    structName = other.structName;
+    arrayLen = other.arrayLen;
+    if (other.elementType) {
+      elementType = std::make_unique<Type>(*other.elementType);
+    } else
+      elementType = nullptr;
+    return *this;
+  }
+};
+
+struct LocalSymbol {
+  position varPos;
+  std::string varName;
+  bool isMut;
+  Type varType;
+  LocalSymbol(const position &pos, const std::string &name, bool isMut,
+              const Type &type)
+      : varPos(pos), varName(name), isMut(isMut), varType(type) {}
+};
+
+inline ExprNode::ExprNode(const position &pos) : ASTNode(pos) {}
+
+inline ExprNode::ExprNode(ExprNode &&) noexcept = default;
+
+inline TypeNode::TypeNode(const position &pos) : ASTNode(pos) {}
+
+inline TypeNode::TypeNode(TypeNode &&) noexcept = default;
+
+inline PathInExprNode::PathInExprNode(const position &pos)
+    : ExprWithoutBlockNode(pos) {
+  kind = nodeKind::PathInExpr;
+}
+
+inline PathInExprNode::PathInExprNode(PathInExprNode &&) noexcept = default;
 
 class ArrayTypeNode : public TypeNode {
 public:
@@ -647,6 +746,7 @@ public:
   std::optional<SelfParam> selfParam;
   std::vector<FunctionParam> functionParam;
   std::unique_ptr<BlockExprNode> functionBody;
+  std::unique_ptr<Type> actualReturnType;
   FunctionDeclItemNode(const position &pos, const std::string &name,
                        std::unique_ptr<BlockExprNode> expr)
       : ItemNode(pos), identifier(name), functionBody(std::move(expr)) {
