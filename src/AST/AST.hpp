@@ -440,9 +440,15 @@ enum class TypeKind {
   Struct
 };
 
+enum class EvaluatedState{
+  NotAccess,
+  Evaluating,
+  Evaluated,
+};
+
 struct ConstValue {
   ConstExprNode *ctx; // first pass store the AST context
-  bool evaluated = false;
+  EvaluatedState state = EvaluatedState::NotAccess;
   std::variant<int, bool> value; // second pass calculate the value
 };
 

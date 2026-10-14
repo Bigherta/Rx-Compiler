@@ -1,6 +1,7 @@
 #include "SemanticAnalyzer.hpp"
 #include "AST.hpp"
 #include "Scope.hpp"
+#include "SymbolCollector.hpp"
 #include <memory>
 
 std::any SemanticAnalyzer::visitUnitType(UnitTypeNode *node) {
@@ -137,6 +138,20 @@ std::any SemanticAnalyzer::visitFunctionDeclItem(FunctionDeclItemNode *node) {
   return {};
 }
 
-std::any SemanticAnalyzer::visitConstantDeclItem(ConstantDeclItemNode *node){
+std::any SemanticAnalyzer::visitConstantDeclItem(ConstantDeclItemNode *node) {
+  auto *structScope = dynamic_cast<implementationScope *>(currentScope.get());
+  auto *globalScope = dynamic_cast<class globalScope *>(
+      structScope ? currentScope->parentScope : currentScope.get());
+  if (structScope) {
+    auto *structSymbol = globalScope->lookupStruct(structScope->structName);
+    structSymbol->structSymbols[node->identifier];
+  }
+}
+
+std::any visitMagnitudeExpr(MagnitudeExprNode *node){
+
+}
+
+std::any visitConstExpr(ConstExprNode *node){
 
 }

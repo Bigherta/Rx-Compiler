@@ -43,14 +43,23 @@ public:
 
 class implementationScope : public Scope {
 private:
-  std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>> valueNameSpace;
+  std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>>
+      &valueNameSpace;
 
-  std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>> typeNameSpace;
+  const std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>>
+      &typeNameSpace;
 
 public:
   std::string structName;
 
   explicit implementationScope() = delete;
+
+  implementationScope(
+      std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>>
+          &valueNameSpace,
+      const std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>>
+          &typeNameSpace)
+      : valueNameSpace(valueNameSpace), typeNameSpace(typeNameSpace) {}
 };
 
 class globalScope : public Scope {
@@ -95,5 +104,23 @@ public:
         }
       }
     }
+  }
+  ConstantSymbol *lookupConstant(const std::string &name) {
+    if (valueNameSpace.contains(name)) {
+      return dynamic_cast<ConstantSymbol *>(valueNameSpace[name].get());
+    }
+    return nullptr;
+  }
+  FunctionSymbol *lookupFunction(const std::string &name) {
+    if (valueNameSpace.contains(name)) {
+      return dynamic_cast<FunctionSymbol *>(valueNameSpace[name].get());
+    }
+    return nullptr;
+  }
+  StructSymbol *lookupStruct(const std::string &name) {
+    if (typeNameSpace.contains(name)) {
+      return dynamic_cast<StructSymbol *>(valueNameSpace[name].get());
+    }
+    return nullptr;
   }
 };

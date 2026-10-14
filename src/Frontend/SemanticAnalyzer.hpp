@@ -9,9 +9,11 @@ class SemanticAnalyzer : public ASTBaseVisitor {
 public:
   DiagnosticError error;
   std::unique_ptr<Scope> currentScope;
+  globalScope *globalScopeVisitor;
   explicit SemanticAnalyzer(SymbolCollector &&collector) {
     error = collector.error;
     currentScope = std::make_unique<globalScope>(std::move(collector), &error);
+    globalScopeVisitor = static_cast<globalScope *>(currentScope.get());
   }
   // Crate and attribute.
   virtual std::any visitCrate(CrateNode *node);
