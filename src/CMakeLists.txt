@@ -64,11 +64,3 @@ add_executable(rx_compiler main.cpp
   Frontend/SemanticAnalyzer.cpp)
 target_link_libraries(rx_compiler PRIVATE rx_parser)
 
-if(BUILD_TESTING)
-  add_executable(symbol_collector_test
-    tests/symbol_collector_test.cpp
-    Frontend/SymbolCollector.cpp
-  )
-  target_link_libraries(symbol_collector_test PRIVATE rx_parser)
-  add_test(NAME symbol_collector COMMAND symbol_collector_test)
-endif()

@@ -1,11 +1,36 @@
 #pragma once
 
+#include "AST.hpp"
 #include "ASTBaseVisitor.hpp"
 #include "Scope.hpp"
 #include "SymbolCollector.hpp"
 #include <memory>
+#include <variant>
+
+struct ExprInfo {
+  Type type;
+  bool isPlace;
+  bool isMutablePlace;
+};
 
 class SemanticAnalyzer : public ASTBaseVisitor {
+private:
+  Type parseIntegerLiteral(const position &pos, std::string literal,
+                           DiagnosticError *err, bool isNegative,
+                           const Type *expected = nullptr);
+  long long parseIntegerLiteral(std::string literal);
+  void analyzeConstantDecl(ConstantSymbol *constant);
+  void analyzeConstantDecl(ConstantSymbol *constant, StructSymbol *owner);
+  auto analyzeConstExpr(ConstExprNode *node, const Type *expected)
+      -> std::pair<Type, ConstantSymbol *>;
+  auto analyzeMagnitudeExpr(MagnitudeExprNode *node)
+      -> std::pair<Type, ConstantSymbol *>;
+  void evaluate();
+  auto evaluateConstantSymbol(ConstantSymbol *)
+      -> const std::pair<Type, std::variant<std::monostate, long long, bool>>;
+  implementationScope *findImplementationScope(Scope *scope);
+  void resolveArrayLengths(Type &type);
+
 public:
   DiagnosticError error;
   std::unique_ptr<Scope> currentScope;
@@ -15,9 +40,14 @@ public:
     currentScope = std::make_unique<globalScope>(std::move(collector), &error);
     globalScopeVisitor = static_cast<globalScope *>(currentScope.get());
   }
+
+  void analyzeConstant();
+
+  void preprocessArrayLengths();
+
   // Crate and attribute.
   virtual std::any visitCrate(CrateNode *node);
-  
+
   // Types.
   virtual std::any visitUnitType(UnitTypeNode *node);
 
@@ -64,6 +94,8 @@ public:
 
   virtual std::any visitMagnitudeExpr(MagnitudeExprNode *node);
 
+  // Array lengths return std::pair<Type, long long>; Error makes the value
+  // invalid.
   virtual std::any visitConstExpr(ConstExprNode *node);
 
   virtual std::any visitArrayExpr(ArrayExprNode *node);

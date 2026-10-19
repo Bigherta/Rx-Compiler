@@ -24,7 +24,7 @@ struct position {
     } else if (startColumn != other.startColumn) {
       return startColumn < other.startColumn;
     } else if (endLine != other.endLine) {
-      return endLine < other.endColumn;
+      return endLine < other.endLine;
     } else {
       return endColumn < other.endColumn;
     }
@@ -95,11 +95,8 @@ public:
   virtual ~ASTNode() = default;
   virtual std::any accept(ASTVisitor *visitor) = 0;
 };
-struct Type;
-struct LocalSymbol;
 class TypeNode : public ASTNode {
 public:
-  std::unique_ptr<Type> actualType;
   TypeNode(const position &pos);
   TypeNode(TypeNode &&) noexcept;
   TypeNode &operator=(TypeNode &&) noexcept;
@@ -114,7 +111,6 @@ public:
 
 class ExprNode : public ASTNode {
 public:
-  std::unique_ptr<Type> exprType;
   ExprNode(const position &pos);
   ExprNode(ExprNode &&) noexcept;
   ExprNode &operator=(ExprNode &&) noexcept;
@@ -228,8 +224,6 @@ class PathInExprNode : public ExprWithoutBlockNode {
 public:
   virtual std::any accept(ASTVisitor *visitor) override;
   PathNode path;
-  std::unique_ptr<LocalSymbol> symbol;
-  std::unique_ptr<Type> varType;
   PathInExprNode(const position &pos);
   PathInExprNode(PathInExprNode &&) noexcept;
   PathInExprNode &operator=(PathInExprNode &&) noexcept;
@@ -421,79 +415,6 @@ public:
       : ExprWithoutBlockNode(pos), isNegative(isNeg) {
     kind = nodeKind::ConstExpr;
   }
-};
-
-enum class TypeKind {
-  I32,
-  U32,
-  Isize,
-  Usize,
-  Bool,
-  Unit,
-  Never,
-  Error,
-  MutReference,
-  ImmutReference,
-  Array,
-  Vec,
-  Box,
-  Struct
-};
-
-enum class EvaluatedState{
-  NotAccess,
-  Evaluating,
-  Evaluated,
-};
-
-struct ConstValue {
-  ConstExprNode *ctx; // first pass store the AST context
-  EvaluatedState state = EvaluatedState::NotAccess;
-  std::variant<int, bool> value; // second pass calculate the value
-};
-
-struct Type {
-  TypeKind kind;
-  std::optional<std::string> structName;
-  std::optional<ConstValue> arrayLen;
-  std::unique_ptr<Type>
-      elementType; // for the inner type of Reference, Array, Vec or Box
-  Type() = default;
-  explicit Type(TypeKind kind) : kind(kind) {}
-  explicit Type(const std::string &name) : structName(name) {
-    kind = TypeKind::Struct;
-  }
-  Type(const Type &other) {
-    kind = other.kind;
-    structName = other.structName;
-    arrayLen = other.arrayLen;
-    if (other.elementType) {
-      elementType = std::make_unique<Type>(*other.elementType);
-    } else
-      elementType = nullptr;
-  }
-  Type &operator=(const Type &other) {
-    if (this == &other)
-      return *this;
-    kind = other.kind;
-    structName = other.structName;
-    arrayLen = other.arrayLen;
-    if (other.elementType) {
-      elementType = std::make_unique<Type>(*other.elementType);
-    } else
-      elementType = nullptr;
-    return *this;
-  }
-};
-
-struct LocalSymbol {
-  position varPos;
-  std::string varName;
-  bool isMut;
-  Type varType;
-  LocalSymbol(const position &pos, const std::string &name, bool isMut,
-              const Type &type)
-      : varPos(pos), varName(name), isMut(isMut), varType(type) {}
 };
 
 inline ExprNode::ExprNode(const position &pos) : ASTNode(pos) {}
@@ -752,7 +673,6 @@ public:
   std::optional<SelfParam> selfParam;
   std::vector<FunctionParam> functionParam;
   std::unique_ptr<BlockExprNode> functionBody;
-  std::unique_ptr<Type> actualReturnType;
   FunctionDeclItemNode(const position &pos, const std::string &name,
                        std::unique_ptr<BlockExprNode> expr)
       : ItemNode(pos), identifier(name), functionBody(std::move(expr)) {

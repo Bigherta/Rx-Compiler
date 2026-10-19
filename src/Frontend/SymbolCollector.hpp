@@ -1,13 +1,132 @@
 #pragma once
 
+#include "AST.hpp"
 #include "ASTBaseVisitor.hpp"
 #include <bitset>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
+
+enum class TypeKind {
+  I32,
+  U32,
+  Isize,
+  Usize,
+  Bool,
+  Unit,
+  Never,
+  Error,
+  MutReference,
+  ImmutReference,
+  Vec,
+  Box,
+  Array,
+  Struct,
+  Function,
+};
+
+enum class EvaluatedState {
+  NotAccess,
+  Evaluating,
+  Evaluated,
+};
+
+struct ConstValue {
+  ConstExprNode *ctx; // first pass store the AST context
+  EvaluatedState state =
+      EvaluatedState::NotAccess; // seconde pass evaluate the constant
+  std::variant<std::monostate, long long, bool>
+      value; // Wide enough for both signed integers and the full 32-bit usize
+             // range.
+};
+
+struct Type {
+  TypeKind kind;
+  std::optional<std::string> structName;
+  std::optional<ConstValue> arrayLen;
+  std::unique_ptr<Type>
+      elementType; // for the inner type of Reference, Array, Vec or Box
+  Type() = default;
+  explicit Type(TypeKind kind) : kind(kind) {}
+  explicit Type(const std::string &name) : structName(name) {
+    kind = TypeKind::Struct;
+  }
+  Type(const Type &other) {
+    kind = other.kind;
+    structName = other.structName;
+    arrayLen = other.arrayLen;
+    if (other.elementType) {
+      elementType = std::make_unique<Type>(*other.elementType);
+    } else
+      elementType = nullptr;
+  }
+  Type &operator=(const Type &other) {
+    if (this == &other)
+      return *this;
+    kind = other.kind;
+    structName = other.structName;
+    arrayLen = other.arrayLen;
+    if (other.elementType) {
+      elementType = std::make_unique<Type>(*other.elementType);
+    } else
+      elementType = nullptr;
+    return *this;
+  }
+  bool operator==(const Type &other) const {
+    if (kind != other.kind) {
+      return false;
+    }
+
+    switch (kind) {
+    // primative types
+    case TypeKind::I32:
+    case TypeKind::U32:
+    case TypeKind::Isize:
+    case TypeKind::Usize:
+    case TypeKind::Bool:
+    case TypeKind::Unit:
+    case TypeKind::Never:
+      return true;
+    // types with inner type
+    case TypeKind::MutReference:
+    case TypeKind::ImmutReference:
+    case TypeKind::Vec:
+    case TypeKind::Box:
+      return elementType && other.elementType &&
+             *elementType == *other.elementType;
+    // array needs to compare the length
+    case TypeKind::Array:
+      return elementType && other.elementType &&
+             *elementType == *other.elementType && arrayLen && other.arrayLen &&
+             arrayLen->state == EvaluatedState::Evaluated &&
+             other.arrayLen->state == EvaluatedState::Evaluated &&
+             std::holds_alternative<long long>(arrayLen->value) &&
+             std::holds_alternative<long long>(other.arrayLen->value) &&
+             arrayLen->value == other.arrayLen->value;
+    // struct needs to compare the name
+    case TypeKind::Struct:
+      return structName && other.structName && structName == other.structName;
+    default:
+      return false;
+    }
+  }
+};
+
+struct LocalSymbol {
+  position varPos;
+  std::string varName;
+  bool isMut;
+  Type varType;
+  LocalSymbol(const position &pos, const std::string &name, bool isMut,
+              const Type &type)
+      : varPos(pos), varName(name), isMut(isMut), varType(type) {}
+};
+
 class BuiltInNames {
 private:
   static inline std::unordered_set<std::string> typeBuiltInNames = {
@@ -64,8 +183,9 @@ struct FunctionSymbol : GlobalSymbol {
 struct ConstantSymbol : GlobalSymbol {
   std::string name;
   Type constantType;
-  ConstValue constantValue;
-  ConstantSymbol* dependency;
+  ConstantDeclItemNode *node = nullptr;
+  ConstantSymbol *dependency = nullptr;
+  ConstValue value;
   ConstantSymbol(const std::string &constantName, const Type &constantType)
       : GlobalSymbol(symbolType::Constant), name(constantName),
         constantType(constantType) {}
@@ -117,6 +237,14 @@ private:
 public:
   void occur(const position &pos, const std::string &text) {
     diagnostics.emplace(pos, text);
+  }
+  bool hasError() const { return !diagnostics.empty(); }
+  std::size_t size() const { return diagnostics.size(); }
+  const std::map<position, std::string> &all() const { return diagnostics; }
+  void report(std::ostream &out) const {
+    for (const auto &[pos, text] : diagnostics) {
+      out << pos.startLine << ":" << pos.startColumn << ": " << text << '\n';
+    }
   }
 };
 

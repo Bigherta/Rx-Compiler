@@ -1,7 +1,12 @@
 #include "AST.hpp"
 #include "../Frontend/ASTVisitor.hpp"
 
-// Type is complete here, so unique_ptr<Type> can be safely destroyed.
+TypeNode &TypeNode::operator=(TypeNode &&) noexcept = default;
+
+// This is TypeNode's key function: defining it here is what emits the vtable
+// and typeinfo. Without it every TypeNode subclass fails to link.
+TypeNode::~TypeNode() = default;
+
 ExprNode &ExprNode::operator=(ExprNode &&) noexcept = default;
 
 ExprNode::~ExprNode() = default;

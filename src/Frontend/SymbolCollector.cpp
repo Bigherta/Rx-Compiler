@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <vector>
 std::any SymbolCollector::visitUnitType(UnitTypeNode *node) {
   return Type(TypeKind::Unit);
 }
@@ -216,7 +217,7 @@ std::any SymbolCollector::visitConstantDeclItem(ConstantDeclItemNode *node) {
   }
   ConstantSymbol constant(node->identifier,
                           std::any_cast<Type>(node->constType->accept(this)));
-  constant.constantValue.ctx = node->constValue.get();
+  constant.node = node;
   table.valueNameSpace.emplace(
       node->identifier, std::make_unique<ConstantSymbol>(std::move(constant)));
   return {};
@@ -232,17 +233,94 @@ std::any SymbolCollector::visitImplDeclItem(ImplDeclItemNode *node) {
     return {};
   }
   impl.name = implType.structName.value();
-  auto replaceSelfName = [&](Type &type) {
-    auto *currentType = &type;
-    while (currentType->elementType) {
-      currentType = currentType->elementType.get();
-    }
-    if (currentType->kind == TypeKind::Struct &&
-        currentType->structName == "Self") {
-      currentType->structName = impl.name;
-    }
-  };
   for (const auto &associate : node->associatedItems) {
+    std::vector<ASTNode *> pending;
+    if (std::holds_alternative<std::unique_ptr<ConstantDeclItemNode>>(
+            associate)) {
+      const auto &constantNode =
+          std::get<std::unique_ptr<ConstantDeclItemNode>>(associate);
+      pending.push_back(constantNode->constType.get());
+      pending.push_back(constantNode->constValue.get());
+    } else {
+      const auto &functionNode =
+          std::get<std::unique_ptr<FunctionDeclItemNode>>(associate);
+      if (functionNode->returnType) {
+        pending.push_back(functionNode->returnType->get());
+      }
+      for (const auto &param : functionNode->functionParam) {
+        pending.push_back(param.paramType.get());
+      }
+    }
+    while (!pending.empty()) {
+      auto *currentNode = pending.back();
+      pending.pop_back();
+      switch (currentNode->kind) {
+      case nodeKind::PathInType: {
+        auto &path = static_cast<PathInTypeNode *>(currentNode)->path;
+        if (!path.segments.empty() &&
+            path.segments.front().pathIdentSegment == "Self") {
+          path.segments.front().pathIdentSegment = impl.name;
+        }
+        for (auto &segment : path.segments) {
+          for (const auto &arg : segment.args.genericArgs) {
+            pending.push_back(arg.genericArgType.get());
+          }
+        }
+        break;
+      }
+      case nodeKind::ReferenceType:
+        pending.push_back(
+            static_cast<ReferenceTypeNode *>(currentNode)->refType.get());
+        break;
+      case nodeKind::ArrayType: {
+        auto *arrayNode = static_cast<ArrayTypeNode *>(currentNode);
+        pending.push_back(arrayNode->typeParam.get());
+        pending.push_back(arrayNode->length.get());
+        break;
+      }
+      case nodeKind::ConstExpr: {
+        auto *constNode = static_cast<ConstExprNode *>(currentNode);
+        if (std::holds_alternative<std::unique_ptr<PathInExprNode>>(
+                constNode->constValue)) {
+          pending.push_back(std::get<std::unique_ptr<PathInExprNode>>(
+                                constNode->constValue)
+                                .get());
+        } else if (std::holds_alternative<std::unique_ptr<MagnitudeExprNode>>(
+                       constNode->constValue)) {
+          pending.push_back(std::get<std::unique_ptr<MagnitudeExprNode>>(
+                                constNode->constValue)
+                                .get());
+        }
+        break;
+      }
+      case nodeKind::MagnitudeExpr: {
+        auto *magnitudeNode = static_cast<MagnitudeExprNode *>(currentNode);
+        if (std::holds_alternative<std::unique_ptr<PathInExprNode>>(
+                magnitudeNode->magnitude)) {
+          pending.push_back(std::get<std::unique_ptr<PathInExprNode>>(
+                                magnitudeNode->magnitude)
+                                .get());
+        }
+        break;
+      }
+      case nodeKind::PathInExpr: {
+        auto &path = static_cast<PathInExprNode *>(currentNode)->path;
+        // A bare Self is not a constant value; preserve it for diagnostics.
+        if (path.segments.size() > 1 &&
+            path.segments.front().pathIdentSegment == "Self") {
+          path.segments.front().pathIdentSegment = impl.name;
+        }
+        for (auto &segment : path.segments) {
+          for (const auto &arg : segment.args.genericArgs) {
+            pending.push_back(arg.genericArgType.get());
+          }
+        }
+        break;
+      }
+      default:
+        break;
+      }
+    }
     if (std::holds_alternative<std::unique_ptr<ConstantDeclItemNode>>(
             associate)) {
       const auto &constantNode =
@@ -251,7 +329,7 @@ std::any SymbolCollector::visitImplDeclItem(ImplDeclItemNode *node) {
       ConstantSymbol constant(
           constantNode->identifier,
           std::any_cast<Type>(constantNode->constType->accept(this)));
-      constant.constantValue.ctx = constantNode->constValue.get();
+      constant.node = constantNode.get();
       impl.associateSymbols.emplace_back(
           std::make_unique<ConstantSymbol>(std::move(constant)));
     } else if (std::holds_alternative<std::unique_ptr<FunctionDeclItemNode>>(
@@ -269,7 +347,6 @@ std::any SymbolCollector::visitImplDeclItem(ImplDeclItemNode *node) {
       if (functionNode->returnType != std::nullopt) {
         func.returnType =
             std::any_cast<Type>(functionNode->returnType->get()->accept(this));
-        replaceSelfName(func.returnType);
       }
       if (functionNode->selfParam != std::nullopt) {
         const auto &self = functionNode->selfParam.value();
@@ -285,7 +362,6 @@ std::any SymbolCollector::visitImplDeclItem(ImplDeclItemNode *node) {
       }
       for (const auto &param : functionNode->functionParam) {
         auto paramType = std::any_cast<Type>(param.paramType->accept(this));
-        replaceSelfName(paramType);
         func.paramTypes.push_back(std::move(paramType));
       }
       impl.associateSymbols.emplace_back(
