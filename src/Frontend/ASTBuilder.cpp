@@ -1,7 +1,7 @@
 #include "ASTBuilder.hpp"
 #include "AST.hpp"
 #include "RxParser.h"
-#include "TerminalNode.h"
+#include "tree/TerminalNode.h"
 #include "Token.h"
 #include <cstddef>
 #include <memory>

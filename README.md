@@ -34,9 +34,13 @@ cmake --build build
 
 构建需要支持 C++23 的编译器和 CMake 3.15 或更新版本。使用方式、入口规则、parse tree 遍历以及错误处理详见 [`docs/parser.md`](docs/parser.md)。文法定义位于 [`grammar/`](grammar/)。
 
+OJ 的 `BUILD` 配置启用 `RX_USE_SYSTEM_ANTLR=ON`，直接链接评测环境预装的 ANTLR C++ runtime，不编译 `vendor/antlr4-cpp`。配置时会打印库版本和路径；当前生成代码要求 runtime 为 **4.13.x**，缺少开发包或版本不兼容时会立即报错，不会退回耗时的源码构建。非标准安装位置可通过 `RX_ANTLR_INCLUDE_DIR` 和 `RX_ANTLR_LIBRARY` 指定。
+
+本地默认仍使用随仓库携带的 runtime；也可显式设置 `-DRX_USE_SYSTEM_ANTLR=OFF`。`RX_FAST_BUILD=ON` 可降低编译器自身的构建耗时。
+
 ## 运行测试
 
-测试命令在 [`config.mk`](config.mk) 中配置，根目录 Makefile 调用 Python 测试运行器。当前配置以 `rustc` 作为参考编译器；接入自己的编译器时，请按需修改 `BUILD`、`SEMANTIC`、`IR`、`CODEGEN` 和 `RUN` 命令。
+测试命令在 [`config.mk`](config.mk) 中配置，根目录 Makefile 调用 Python 测试运行器。当前 `BUILD`、`SEMANTIC` 使用本项目的 C++ 编译器和系统 ANTLR runtime；`IR`、`CODEGEN` 仍是参考 `rustc` 命令，尚未接入自己的后端。本地若使用上述 `build` 目录中的随仓库 runtime 构建产物，可运行 `make test BUILD= SEMANTIC='./build/src/rx_compiler {source}' FILTER=official:semantic STAGE=semantic`。
 
 运行测试前，需要准备 Python 3、xmake、Rust 工具链及 `riscv32im-unknown-none-elf` target；IR 测试还需要 `clang-22`。REIMU 首次构建命令如下：
 

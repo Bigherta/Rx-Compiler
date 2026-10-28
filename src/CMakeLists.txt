@@ -18,13 +18,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(CMAKE_CXX_STANDARD 23)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-  set(ANTLR_BUILD_CPP_TESTS OFF CACHE BOOL "Build ANTLR C++ runtime tests")
-  set(ANTLR_BUILD_SHARED OFF CACHE BOOL "Build shared ANTLR C++ runtime")
-  set(ANTLR_BUILD_STATIC ON CACHE BOOL "Build static ANTLR C++ runtime")
-  add_subdirectory(
-    "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/antlr4-cpp"
-    "${CMAKE_CURRENT_BINARY_DIR}/vendor/antlr4-cpp"
-  )
+  include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AntlrRuntime.cmake")
 endif()
 
 add_library(rx_parser STATIC
@@ -54,7 +48,7 @@ target_include_directories(rx_parser PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/AST"
   "${CMAKE_CURRENT_SOURCE_DIR}/Frontend"
 )
-target_link_libraries(rx_parser PUBLIC antlr4_static)
+target_link_libraries(rx_parser PUBLIC rx_antlr_runtime)
 
 add_executable(rx_compiler main.cpp
   Frontend/SymbolCollector.hpp
@@ -63,4 +57,3 @@ add_executable(rx_compiler main.cpp
   Frontend/SemanticAnalyzer.hpp
   Frontend/SemanticAnalyzer.cpp)
 target_link_libraries(rx_compiler PRIVATE rx_parser)
-
