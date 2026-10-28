@@ -5,7 +5,7 @@
 # Write shared runtime assembly there if your IR/CODEGEN output references it.
 BUILD = cmake -S . -B target/oj-build -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ && \
-    cmake --build target/oj-build --target rx_compiler -j24 && : > {runtime}
+    cmake --build target/oj-build --target rx_compiler -j4 && : > {runtime}
 
 # Required for semantic tests: exit 0 to accept {source}, 1 to reject it.
 SEMANTIC = ./target/oj-build/src/rx_compiler {source}
