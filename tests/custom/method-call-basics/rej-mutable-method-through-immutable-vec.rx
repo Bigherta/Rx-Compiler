@@ -1,0 +1,15 @@
+struct Item {
+    value: i32,
+}
+
+impl Item {
+    fn change(&mut self) {
+        self.value = 2;
+    }
+}
+
+fn vector(items: Vec<&mut Item>) {
+    items[0].change();
+}
+
+fn main() {}

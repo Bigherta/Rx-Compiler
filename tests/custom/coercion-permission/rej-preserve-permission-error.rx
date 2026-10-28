@@ -1,0 +1,8 @@
+fn check(values: Vec<&mut i32>) {
+    let target: &mut i32 = values[0];
+    // The failed initializer must stay Error, not become &mut i32 and cause
+    // an unrelated bool-versus-i32 diagnostic on this dependent expression.
+    let dependent: bool = *target;
+}
+
+fn main() {}

@@ -1,0 +1,62 @@
+struct Holder {
+    values: &mut [i32; 1],
+}
+
+fn array_reference(values: [&mut [i32; 1]; 1]) {
+    values[0][0] = 2;
+    values[0][0] += 1;
+}
+
+fn boxed_array_reference(values: Box<[&mut [i32; 1]; 1]>) {
+    values[0][0] = 2;
+}
+
+fn reference_before_vec(values: [&mut Vec<i32>; 1]) {
+    values[0][0] = 2;
+}
+
+fn boxed_reference_before_vec(values: Box<&mut Vec<i32>>) {
+    values[0] = 2;
+}
+
+fn mutable_vec(mut values: Vec<&mut [i32; 1]>) {
+    values[0][0] = 2;
+    values[0][0] += 1;
+}
+
+fn mutable_vec_reference(values: &mut Vec<&mut [i32; 1]>) {
+    values[0][0] = 2;
+}
+
+fn mutable_boxed_vec(mut values: Box<Vec<&mut [i32; 1]>>) {
+    values[0][0] = 2;
+}
+
+fn mutable_fields(mut values: Vec<Holder>) {
+    values[0].values[0] = 2;
+}
+
+fn immutable_array_fields(values: [Holder; 1]) {
+    values[0].values[0] = 2;
+}
+
+fn shared_reads(values: &Vec<&mut [i32; 1]>, arrays: &[&mut [i32; 1]; 1]) {
+    let first: i32 = values[0][0];
+    let second: i32 = arrays[0][0];
+}
+
+fn shared_coercion(values: Vec<&mut [i32; 1]>) {
+    let shared: &[i32; 1] = values[0];
+}
+
+fn copied_value(values: &[[i32; 1]; 1]) {
+    ({ values[0] })[0] = 2;
+    let mut copied = values[0];
+    copied[0] = 2;
+}
+
+fn temporary_array() {
+    [1i32][0] = 2;
+}
+
+fn main() {}

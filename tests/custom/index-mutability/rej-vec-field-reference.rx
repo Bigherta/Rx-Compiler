@@ -1,0 +1,9 @@
+struct Holder {
+    values: &mut [i32; 1],
+}
+
+fn check(values: Vec<Holder>) {
+    values[0].values[0] = 2;
+}
+
+fn main() {}

@@ -1,0 +1,5 @@
+fn check(values: Vec<&mut Vec<i32>>) {
+    values[0][0] = 2;
+}
+
+fn main() {}

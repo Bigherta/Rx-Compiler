@@ -1,0 +1,4 @@
+fn main() {
+    let values = [1i32; 2];
+    values.len(0usize);
+}

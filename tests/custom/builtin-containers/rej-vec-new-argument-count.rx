@@ -1,0 +1,3 @@
+fn main() {
+    let value = Vec::<i32>::new(1);
+}

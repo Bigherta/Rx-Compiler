@@ -1,0 +1,5 @@
+fn check(flag: bool, values: Vec<&mut i32>, fallback: &mut i32) {
+    let target: &mut i32 = if flag { values[0] } else { fallback };
+}
+
+fn main() {}

@@ -1,0 +1,12 @@
+struct Item {
+    value: i32,
+}
+
+impl Item {
+    fn inspect(item: &Item) {}
+}
+
+fn main() {
+    let item = Item { value: 1 };
+    item.inspect();
+}

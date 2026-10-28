@@ -1,0 +1,3 @@
+fn main() {
+    let value = Box::<i32, bool>::new(1);
+}

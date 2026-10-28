@@ -1,0 +1,74 @@
+[
+  {
+    "source": "acc-inherent-receivers.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Inherent receiver metadata survives symbol moves for value, shared, mutable, temporary, and Box calls."
+  },
+  {
+    "source": "acc-array-and-container-methods.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Array len and Vec methods resolve on owned values, references, Boxes, and temporaries."
+  },
+  {
+    "source": "rej-vector-constructor-as-method.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Vec new remains an associated function with no method receiver."
+  },
+  {
+    "source": "rej-method-argument-type.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A resolved inherent method still checks ordinary argument types."
+  },
+  {
+    "source": "rej-array-len-arguments.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Array len takes no explicit arguments."
+  },
+  {
+    "source": "rej-associated-empty.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An associated function without parameters is rejected normally in a dot call."
+  },
+  {
+    "source": "rej-associated-owned-parameter.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An owned first parameter does not turn an associated function into a method."
+  },
+  {
+    "source": "rej-associated-shared-parameter.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A shared first parameter does not turn an associated function into a method."
+  },
+  {
+    "source": "acc-mutable-reborrow-paths.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Existing mutable references reborrow through immutable bindings, arrays, Boxes, mutable vectors, and nested mutable references."
+  },
+  {
+    "source": "rej-mutable-method-through-shared-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A mutable shared-reference binding cannot grant mutable access to its target."
+  },
+  {
+    "source": "rej-mutable-method-through-immutable-vec.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Reborrowing a stored mutable reference cannot bypass an immutable Vec index."
+  },
+  {
+    "source": "acc-clone-receiver-priority.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Clone uses exact receiver candidates and preserves value, shared, mutable, and inherent method priority."
+  }
+]

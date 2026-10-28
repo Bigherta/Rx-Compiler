@@ -1,0 +1,14 @@
+struct Item {
+    value: i32,
+}
+
+impl Item {
+    fn choose(&self, flag: bool) -> i32 {
+        self.value
+    }
+}
+
+fn main() {
+    let item = Item { value: 1 };
+    item.choose(1i32);
+}

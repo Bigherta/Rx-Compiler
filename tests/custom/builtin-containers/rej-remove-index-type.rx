@@ -1,0 +1,5 @@
+fn check(values: &mut Vec<i32>, index: i32) {
+    let value = Vec::<i32>::remove(values, index);
+}
+
+fn main() {}

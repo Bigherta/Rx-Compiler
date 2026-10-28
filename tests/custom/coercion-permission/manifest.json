@@ -1,0 +1,32 @@
+[
+  {
+    "source": "acc-block-reference-coercions.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Block tails preserve legal mutable reborrows, shared coercions, and expected integer types."
+  },
+  {
+    "source": "rej-block-mutable-reborrow.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A block tail cannot discard an immutable Vec indexing restriction before a mutable reborrow."
+  },
+  {
+    "source": "rej-nested-block-mutable-reborrow.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Nested blocks must check mutable reborrow permission before clearing place metadata."
+  },
+  {
+    "source": "rej-if-branch-mutable-reborrow.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Expected mutable-reference coercions must be checked inside each if branch."
+  },
+  {
+    "source": "rej-preserve-permission-error.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Permission failure must retain Error for dependent expressions rather than the expected reference type."
+  }
+]

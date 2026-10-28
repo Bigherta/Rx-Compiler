@@ -1,0 +1,6 @@
+#[derive(PartialEq, Eq)]
+struct Record { value: i32 }
+
+fn compare(a: Record, b: Record) -> bool { a < b }
+
+fn main() {}

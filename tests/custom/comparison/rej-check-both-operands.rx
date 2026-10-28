@@ -1,0 +1,5 @@
+fn compare() {
+    ({ loop {}; 1i32 }) < true;
+}
+
+fn main() {}

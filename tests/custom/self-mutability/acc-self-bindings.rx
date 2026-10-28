@@ -1,0 +1,20 @@
+struct S {
+    value: i32,
+}
+
+impl S {
+    fn replace(mut self, other: S) {
+        self = other;
+        self.value = 1;
+    }
+
+    fn mutable_reference_type(&mut self) {
+        let target: &mut S = self;
+    }
+
+    fn shared_reference_type(&self) {
+        let target: &S = self;
+    }
+}
+
+fn main() {}

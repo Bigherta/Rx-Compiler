@@ -1,0 +1,74 @@
+[
+  {
+    "source": "acc-associated-container-signatures.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "All six container signatures support concrete types, cached instances, receiver parameters, and non-Copy elements."
+  },
+  {
+    "source": "rej-box-argument-type.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Box new checks its value against the concrete element type."
+  },
+  {
+    "source": "rej-vec-new-argument-count.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Vec new accepts no arguments."
+  },
+  {
+    "source": "rej-push-element-type.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An explicit Vec push checks the element argument type."
+  },
+  {
+    "source": "rej-remove-index-type.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An explicit Vec remove requires a usize index."
+  },
+  {
+    "source": "rej-push-shared-receiver.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An explicit Vec push cannot coerce a shared receiver to a mutable reference."
+  },
+  {
+    "source": "rej-unknown-container-item.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Unknown container associated items are rejected."
+  },
+  {
+    "source": "rej-box-has-no-len.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Vec operations are not registered on Box."
+  },
+  {
+    "source": "rej-associated-item-type-arguments.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Associated item type arguments are rejected even when the base signature is cached."
+  },
+  {
+    "source": "rej-container-type-argument-count.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Container qualifiers accept exactly one concrete type argument."
+  },
+  {
+    "source": "rej-undefined-element-type.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An invalid element type propagates Error instead of creating a builtin signature."
+  },
+  {
+    "source": "rej-blocked-mutable-receiver.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An explicit mutable receiver argument must preserve an outer Vec indexing restriction."
+  }
+]

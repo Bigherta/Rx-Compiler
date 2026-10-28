@@ -1,0 +1,4 @@
+fn main() {
+    let first = Vec::<i32>::new();
+    let second = Vec::<i32>::new::<u32>();
+}

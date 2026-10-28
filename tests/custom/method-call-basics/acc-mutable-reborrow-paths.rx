@@ -1,0 +1,31 @@
+struct Item {
+    value: i32,
+}
+
+impl Item {
+    fn change(&mut self) {
+        self.value = 2;
+    }
+}
+
+fn direct(item: &mut Item) {
+    item.change();
+}
+
+fn array(items: [&mut Item; 1]) {
+    items[0].change();
+}
+
+fn boxed(item: Box<&mut Item>) {
+    item.change();
+}
+
+fn vector(mut items: Vec<&mut Item>) {
+    items[0].change();
+}
+
+fn nested(item: &mut &mut Item) {
+    item.change();
+}
+
+fn main() {}

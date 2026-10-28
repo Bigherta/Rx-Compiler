@@ -1,0 +1,5 @@
+fn check(values: &Vec<i32>) {
+    Vec::<i32>::push(values, 1);
+}
+
+fn main() {}

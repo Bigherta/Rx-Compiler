@@ -1,0 +1,42 @@
+struct Item {
+    value: i32,
+}
+
+impl Item {
+    fn boxed(self) -> Box<Self> {
+        Box::<Self>::new(self)
+    }
+}
+
+fn constructors(target: &mut i32) {
+    let first: Box<i32> = Box::<i32>::new(1);
+    let cached: Box<i32> = Box::<i32>::new(2);
+    let unsigned: Box<u32> = Box::<u32>::new(3);
+    let boolean: Box<bool> = Box::<bool>::new(true);
+    let reference: Box<&mut i32> = Box::<&mut i32>::new(target);
+    let array: Box<[i32; 4]> = Box::<[i32; 4]>::new([1; 4]);
+    let same_length: Box<[i32; 4usize]> = Box::<[i32; 4usize]>::new([2; 4]);
+    let nested: Box<Vec<i32>> = Box::<Vec<i32>>::new(Vec::<i32>::new());
+}
+
+fn vector_operations() {
+    let mut values = Vec::<u32>::new();
+    let mut other = Vec::<u32>::new();
+    let length: usize = Vec::<u32>::len(&values);
+    let empty: bool = Vec::<u32>::is_empty(&values);
+    Vec::<u32>::push(&mut values, 1);
+    Vec::<u32>::push(&mut other, 2);
+    let value: u32 = Vec::<u32>::remove(&mut values, 0);
+    let cached_length: usize = Vec::<u32>::len(&other);
+    let cached_empty: bool = Vec::<u32>::is_empty(&other);
+    let cached_value: u32 = Vec::<u32>::remove(&mut other, 0);
+}
+
+fn no_copy_or_clone_required() {
+    let mut values = Vec::<Item>::new();
+    Vec::<Item>::push(&mut values, Item { value: 1 });
+    let value: Item = Vec::<Item>::remove(&mut values, 0);
+    let boxed: Box<Item> = Box::<Item>::new(value);
+}
+
+fn main() {}

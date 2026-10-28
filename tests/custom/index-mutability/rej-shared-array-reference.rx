@@ -1,0 +1,5 @@
+fn check(values: &[&mut [i32; 1]; 1]) {
+    values[0][0] = 2;
+}
+
+fn main() {}

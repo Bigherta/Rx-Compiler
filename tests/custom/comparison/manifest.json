@@ -1,0 +1,62 @@
+[
+  {
+    "source": "acc-comparisons.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Scalar and reference ordering, PartialEq-only aggregates, and bool results."
+  },
+  {
+    "source": "rej-equality-without-partialeq.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Equality requires PartialEq, even for two values of the same struct type."
+  },
+  {
+    "source": "rej-ordering-integer-mismatch.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Ordering cannot convert between integer types."
+  },
+  {
+    "source": "rej-ordering-reverse-adjustment.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A left mutable reference cannot adjust to a right shared reference."
+  },
+  {
+    "source": "rej-ordering-inner-adjustment.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Ordering cannot rewrite inner reference mutability."
+  },
+  {
+    "source": "rej-ordering-reference-depth.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Ordering requires matching reference depth."
+  },
+  {
+    "source": "rej-ordering-value-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Ordering cannot mix scalar values and references."
+  },
+  {
+    "source": "rej-ordering-aggregate.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "PartialEq and Eq do not enable struct ordering."
+  },
+  {
+    "source": "rej-ordering-box.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Ordering cannot automatically dereference Box, even behind references."
+  },
+  {
+    "source": "rej-check-both-operands.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A diverging left operand does not suppress right operand type checking."
+  }
+]

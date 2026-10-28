@@ -1,0 +1,26 @@
+[
+  {
+    "source": "acc-self-bindings.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Owned mut self remains assignable, and reference receivers retain their reference types."
+  },
+  {
+    "source": "rej-reassign-mutable-reference-self.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An &mut self receiver has an immutable binding despite its mutable referent."
+  },
+  {
+    "source": "rej-reassign-shared-reference-self.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An &self receiver binding cannot be reassigned."
+  },
+  {
+    "source": "rej-reassign-owned-self.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An owned self receiver requires mut to allow reassignment."
+  }
+]

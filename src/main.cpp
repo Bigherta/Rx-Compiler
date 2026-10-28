@@ -4,7 +4,6 @@
 #include "RxParser.h"
 #include "SemanticAnalyzer.hpp"
 #include "SymbolCollector.hpp"
-
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -33,7 +32,8 @@ int main(int argc, char **argv) {
   // Read the source file.
   std::ifstream file(path);
   if (!file) {
-    std::cerr << "failed to open " << path << '\n';
+    std::cerr << "File error: could not open source file `" << path
+              << "` for reading\n";
     return 2;
   }
   antlr4::ANTLRInputStream input;
@@ -48,7 +48,9 @@ int main(int argc, char **argv) {
       lexer.getNumberOfSyntaxErrors() + parser.getNumberOfSyntaxErrors();
   if (syntaxErrors != 0 || tree == nullptr) {
     std::cerr << syntaxErrors
-              << (syntaxErrors == 1 ? " syntax error\n:" : " syntax errors\n:");
+              << (syntaxErrors == 1
+                      ? " lexical or syntax error; compilation stopped\n"
+                      : " lexical or syntax errors; compilation stopped\n");
     return 1;
   }
 
@@ -56,7 +58,8 @@ int main(int argc, char **argv) {
   ASTBuilder builder;
   auto crate = builder.visitCrate(tree);
   if (!crate) {
-    std::cerr << "AST construction failed\n";
+    std::cerr << "AST error: failed to construct the syntax tree "
+                 "from the parsed source\n";
     return 1;
   }
 
@@ -73,21 +76,36 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // Check the constants.
   SemanticAnalyzer analyzer(std::move(collector));
-  analyzer.analyzeConstant();
+
+  // Evaluate constants before resolving array lengths.
+  analyzer.checkConstant();
   if (analyzer.error.hasError()) {
     analyzer.error.report(std::cerr);
     return 1;
   }
 
-  // preprocess the array length
+  // Preprocess array lengths in their declaration contexts.
   analyzer.preprocessArrayLengths();
   if (analyzer.error.hasError()) {
     analyzer.error.report(std::cerr);
     return 1;
   }
-  
+
+  // Check the types.
+  analyzer.checkItemType();
+  if (analyzer.error.hasError()) {
+    analyzer.error.report(std::cerr);
+    return 1;
+  }
+
+  // Check structs after resolving `Self` to its enclosing struct name.
+  analyzer.checkStruct();
+  if (analyzer.error.hasError()) {
+    analyzer.error.report(std::cerr);
+    return 1;
+  }
+
   // Run semantic checks.
   crate->accept(&analyzer);
   if (analyzer.error.hasError()) {

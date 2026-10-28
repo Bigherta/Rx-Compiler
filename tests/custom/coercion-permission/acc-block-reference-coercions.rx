@@ -1,0 +1,25 @@
+fn mutable_vector(mut values: Vec<&mut i32>) {
+    let target: &mut i32 = { values[0] };
+    *target = 2;
+}
+
+fn nested_mutable_vector(values: &mut Vec<&mut i32>) {
+    let target: &mut i32 = { { values[0] } };
+    *target = 2;
+}
+
+fn immutable_binding(target: &mut i32) {
+    let reborrowed: &mut i32 = { target };
+    *reborrowed = 2;
+}
+
+fn shared_vector(values: Vec<&mut i32>) {
+    let target: &i32 = { { values[0] } };
+    let value: i32 = *target;
+}
+
+fn expected_integer_type() {
+    let value: u32 = { { 1 } };
+}
+
+fn main() {}

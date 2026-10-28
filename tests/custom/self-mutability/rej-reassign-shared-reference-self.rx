@@ -1,0 +1,11 @@
+struct S {
+    value: i32,
+}
+
+impl S {
+    fn replace(&self, other: &S) {
+        self = other;
+    }
+}
+
+fn main() {}

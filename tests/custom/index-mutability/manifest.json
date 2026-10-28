@@ -1,0 +1,68 @@
+[
+  {
+    "source": "acc-index-projections.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Preserve mutable access before Vec indexing, shared reads, field projections, and independent copied values."
+  },
+  {
+    "source": "rej-immutable-vec-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A stored mutable reference cannot bypass immutable Vec indexing."
+  },
+  {
+    "source": "rej-shared-array-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Shared array access remains blocked across later indexing through a mutable reference."
+  },
+  {
+    "source": "rej-shared-vec-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Shared Vec access remains blocked across later indexing through a mutable reference."
+  },
+  {
+    "source": "rej-vec-field-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Field access must preserve the immutable Vec indexing restriction."
+  },
+  {
+    "source": "rej-shared-array-field-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Field access must preserve a shared array dereference restriction."
+  },
+  {
+    "source": "rej-vec-array-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Array indexing cannot discard an outer immutable Vec restriction."
+  },
+  {
+    "source": "rej-vec-box-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Box and mutable-reference autodereferences cannot bypass immutable Vec indexing."
+  },
+  {
+    "source": "rej-immutable-boxed-vec.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An immutable Box owner cannot provide mutable access to its Vec."
+  },
+  {
+    "source": "rej-nested-vec-reference.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A reference to an inner Vec cannot bypass immutable access to the outer Vec."
+  },
+  {
+    "source": "rej-compound-assignment.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Compound assignment also respects the inherited mutation restriction."
+  }
+]

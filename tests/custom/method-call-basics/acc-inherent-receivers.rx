@@ -1,0 +1,34 @@
+struct Counter {
+    value: i32,
+}
+
+impl Counter {
+    fn read(&self) -> i32 {
+        self.value
+    }
+
+    fn add(&mut self, amount: i32) {
+        self.value += amount;
+    }
+
+    fn take(self) -> i32 {
+        self.value
+    }
+}
+
+fn through_references(counter: &mut Counter) -> i32 {
+    counter.add(1);
+    let shared: &Counter = counter;
+    shared.read()
+}
+
+fn main() {
+    let mut counter = Counter { value: 1 };
+    counter.add(2);
+    let value: i32 = counter.read();
+    let updated: i32 = through_references(&mut counter);
+    let moved: i32 = counter.take();
+    let boxed = Box::<Counter>::new(Counter { value: 3 });
+    let dereferenced: i32 = boxed.read();
+    (Counter { value: 4 }).add(1);
+}

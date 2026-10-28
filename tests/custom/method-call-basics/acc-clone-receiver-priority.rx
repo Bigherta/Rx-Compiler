@@ -1,0 +1,52 @@
+#[derive(Copy, Clone)]
+struct OwnedClone {
+    value: i32,
+}
+
+impl OwnedClone {
+    fn clone(self) -> i32 {
+        self.value
+    }
+}
+
+fn owned_before_shared(item: &mut OwnedClone) -> i32 {
+    item.clone()
+}
+
+fn existing_shared_receiver(item: &OwnedClone) -> OwnedClone {
+    item.clone()
+}
+
+#[derive(Clone)]
+struct MutableClone {
+    value: i32,
+}
+
+impl MutableClone {
+    fn clone(&mut self) -> i32 {
+        self.value
+    }
+}
+
+fn shared_before_mutable() {
+    let item = MutableClone { value: 1 };
+    let cloned: MutableClone = item.clone();
+}
+
+struct InherentClone {
+    value: i32,
+}
+
+impl InherentClone {
+    fn clone(&self) -> i32 {
+        self.value
+    }
+}
+
+fn inherent_shared_receiver(item: &InherentClone) -> i32 {
+    item.clone()
+}
+
+fn main() {
+    let number: i32 = 1i32.clone();
+}

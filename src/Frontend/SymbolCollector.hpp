@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
@@ -36,30 +37,74 @@ enum class EvaluatedState {
   Evaluated,
 };
 
+enum class BuiltinTrait {
+  Copy,
+  Clone,
+  PartialEq,
+  Eq,
+};
+
+enum class ReceiverKind { None, Value, Shared, Mutable };
+
 struct ConstValue {
-  ConstExprNode *ctx; // first pass store the AST context
+  ConstExprNode *ctx = nullptr; // first pass store the AST context
   EvaluatedState state =
       EvaluatedState::NotAccess; // seconde pass evaluate the constant
-  std::variant<std::monostate, long long, bool>
-      value; // Wide enough for both signed integers and the full 32-bit usize
-             // range.
+  std::variant<std::monostate, long long, bool> value =
+      std::monostate{}; // Wide enough for both signed integers and the full
+                        // 32-bit usize
+  // range.
+  ConstValue() = default;
+  ConstValue(ConstValue &&other) {
+    ctx = std::move(other.ctx);
+    state = other.state;
+    value = other.value;
+  }
+  ConstValue(const ConstValue &other) {
+    ctx = other.ctx;
+    state = other.state;
+    value = other.value;
+  }
+  ConstValue &operator=(const ConstValue &other) {
+    if (this != &other) {
+      ctx = other.ctx;
+      state = other.state;
+      value = other.value;
+    }
+    return *this;
+  }
+  ConstValue &operator=(ConstValue &&other) {
+    if (this != &other) {
+      ctx = std::move(other.ctx);
+      state = other.state;
+      value = other.value;
+    }
+    return *this;
+  }
 };
+
+struct FunctionSymbol;
 
 struct Type {
   TypeKind kind;
+  position pos{}; // Source range of the type syntax; zero for synthetic types.
   std::optional<std::string> structName;
   std::optional<ConstValue> arrayLen;
+  std::optional<FunctionSymbol *> functionSymbol;
   std::unique_ptr<Type>
       elementType; // for the inner type of Reference, Array, Vec or Box
   Type() = default;
-  explicit Type(TypeKind kind) : kind(kind) {}
+  explicit Type(TypeKind kind, const position &pos = {})
+      : kind(kind), pos(pos) {}
   explicit Type(const std::string &name) : structName(name) {
     kind = TypeKind::Struct;
   }
   Type(const Type &other) {
     kind = other.kind;
+    pos = other.pos;
     structName = other.structName;
     arrayLen = other.arrayLen;
+    functionSymbol = other.functionSymbol;
     if (other.elementType) {
       elementType = std::make_unique<Type>(*other.elementType);
     } else
@@ -69,14 +114,18 @@ struct Type {
     if (this == &other)
       return *this;
     kind = other.kind;
+    pos = other.pos;
     structName = other.structName;
     arrayLen = other.arrayLen;
+    functionSymbol = other.functionSymbol;
     if (other.elementType) {
       elementType = std::make_unique<Type>(*other.elementType);
     } else
       elementType = nullptr;
     return *this;
   }
+  Type(Type &&) noexcept = default;
+  Type &operator=(Type &&) noexcept = default;
   bool operator==(const Type &other) const {
     if (kind != other.kind) {
       return false;
@@ -111,6 +160,9 @@ struct Type {
     // struct needs to compare the name
     case TypeKind::Struct:
       return structName && other.structName && structName == other.structName;
+    case TypeKind::Function:
+      return functionSymbol && other.functionSymbol &&
+             functionSymbol == other.functionSymbol;
     default:
       return false;
     }
@@ -158,26 +210,46 @@ enum class symbolType {
 
 struct GlobalSymbol {
   symbolType type;
+  position pos{};
   explicit GlobalSymbol(symbolType symbolType) : type(symbolType) {}
   virtual ~GlobalSymbol() = default;
 };
 
 struct FunctionSymbol : GlobalSymbol {
   std::string name;
+  Type functionalType;
   Type returnType;
   std::vector<Type> paramTypes;
+  ReceiverKind receiver = ReceiverKind::None;
   FunctionSymbol(const std::string &funcName)
       : GlobalSymbol(symbolType::Function), name(funcName),
-        returnType(TypeKind::Unit) {}
+        returnType(TypeKind::Unit) {
+    functionalType.kind = TypeKind::Function;
+    functionalType.functionSymbol = this;
+  }
   FunctionSymbol(const std::string &funcName, const Type &returnType,
                  const std::vector<Type> &funcParams)
       : GlobalSymbol(symbolType::Function), name(funcName),
         returnType(returnType) {
     paramTypes = funcParams;
+    functionalType.kind = TypeKind::Function;
+    functionalType.functionSymbol = this;
   }
   FunctionSymbol(const std::string &funcName,
                  const std::vector<Type> &funcParams)
-      : FunctionSymbol(funcName, Type(TypeKind::Unit), funcParams) {}
+      : FunctionSymbol(funcName, Type(TypeKind::Unit), funcParams) {
+    functionalType.kind = TypeKind::Function;
+    functionalType.functionSymbol = this;
+  }
+  FunctionSymbol(FunctionSymbol &&other) noexcept
+      : GlobalSymbol(other), name(std::move(other.name)),
+        functionalType(std::move(other.functionalType)),
+        returnType(std::move(other.returnType)),
+        paramTypes(std::move(other.paramTypes)), receiver(other.receiver) {
+    // The function type stores a self pointer, so a moved symbol must point at
+    // its final address instead of the source object.
+    functionalType.functionSymbol = this;
+  }
 };
 
 struct ConstantSymbol : GlobalSymbol {
@@ -192,16 +264,93 @@ struct ConstantSymbol : GlobalSymbol {
 };
 
 struct StructSymbol : GlobalSymbol {
+  enum class dependencyCheckState {
+    NotAccess,
+    checking,
+    checked,
+  };
   std::bitset<4> outAttribute; // 4 bits represent the 4 attributes
+  std::bitset<4> traitValid;
   std::string name;
   std::unordered_map<std::string, Type> structFields;
   std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>> structSymbols;
+  std::vector<StructSymbol *> dependency;
+  std::vector<StructSymbol *> copyDependOnThis;
+  std::vector<StructSymbol *> cloneDependOnThis;
+  std::vector<StructSymbol *> partialEqDependOnThis;
+  std::vector<StructSymbol *> eqDependOnThis;
+  dependencyCheckState dependencyChecked =
+      StructSymbol::dependencyCheckState::NotAccess;
   StructSymbol(const std::string &structName)
       : GlobalSymbol(symbolType::Struct), name(structName) {}
+
+private:
+  std::optional<std::string_view> checkTraitDepend(const Type &type,
+                                                   BuiltinTrait trait) {
+    switch (type.kind) {
+    case TypeKind::I32:
+    case TypeKind::U32:
+    case TypeKind::Isize:
+    case TypeKind::Usize:
+    case TypeKind::Bool:
+      return std::nullopt;
+    case TypeKind::Struct: {
+      return std::string_view(*type.structName);
+    }
+    case TypeKind::Array: {
+      return checkTraitDepend(*type.elementType, trait);
+    }
+    case TypeKind::ImmutReference: {
+      if (trait == BuiltinTrait::Copy || trait == BuiltinTrait::Clone) {
+        return std::nullopt;
+      } else {
+        return checkTraitDepend(*type.elementType, trait);
+      }
+    }
+    case TypeKind::MutReference: {
+      if (trait == BuiltinTrait::Copy) {
+        traitValid[0] = 0;
+        return std::nullopt;
+      } else if (trait == BuiltinTrait::Clone) {
+        traitValid[1] = 0;
+        return std::nullopt;
+      } else {
+        return checkTraitDepend(*type.elementType, trait);
+      }
+    }
+    case TypeKind::Box:
+    case TypeKind::Vec: {
+      if (trait == BuiltinTrait::Copy) {
+        traitValid[0] = 0;
+        return std::nullopt;
+      }
+      return checkTraitDepend(*type.elementType, trait);
+    }
+    case TypeKind::Unit:
+    case TypeKind::Never:
+    case TypeKind::Error:
+    case TypeKind::Function:
+      traitValid.reset();
+      return std::nullopt;
+    }
+  }
+
+public:
+  std::optional<std::string_view> checkCopyDepend(const Type &type) {
+    return checkTraitDepend(type, BuiltinTrait::Copy);
+  }
+  std::optional<std::string_view> checkCloneDepend(const Type &type) {
+    return checkTraitDepend(type, BuiltinTrait::Clone);
+  }
+  std::optional<std::string_view> checkPartialEqDepend(const Type &type) {
+    return checkTraitDepend(type, BuiltinTrait::PartialEq);
+  }
+  std::optional<std::string_view> checkEqDepend(const Type &type) {
+    return checkTraitDepend(type, BuiltinTrait::Eq);
+  }
 };
 
 struct ImplSymbol : GlobalSymbol {
-  position pos;
   std::vector<position> itemPos;
   std::string name;
   std::vector<std::unique_ptr<GlobalSymbol>> associateSymbols;

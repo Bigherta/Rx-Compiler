@@ -1,0 +1,35 @@
+fn array_length(values: &[i32; 2]) -> usize {
+    values.len()
+}
+
+fn vector_length(values: &Vec<i32>) -> usize {
+    values.len()
+}
+
+fn append(values: &mut Vec<i32>) {
+    values.push(3);
+    let removed: i32 = values.remove(0);
+}
+
+fn main() {
+    let array = [1i32; 2];
+    let length: usize = array.len();
+    let shared_length: usize = array_length(&array);
+    let temporary_length: usize = [2i32; 3].len();
+    let boxed_array = Box::<[i32; 2]>::new([3i32; 2]);
+    let boxed_length: usize = boxed_array.len();
+
+    let mut values = Vec::<i32>::new();
+    let empty: bool = values.is_empty();
+    values.push(1);
+    values.push(2);
+    let count: usize = values.len();
+    let shared_count: usize = vector_length(&values);
+    append(&mut values);
+    let removed: i32 = values.remove(0);
+
+    let mut boxed_values = Box::<Vec<i32>>::new(Vec::<i32>::new());
+    boxed_values.push(4);
+    let boxed_count: usize = boxed_values.len();
+    Vec::<i32>::new().push(5);
+}

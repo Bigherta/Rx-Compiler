@@ -62,7 +62,8 @@ ASTBuilder::getAssignmentOperator(RxParser::AssignmentOperatorContext *ctx) {
     // >>= is represented by three pieces of one punctuation token.
     return AssignmentOperator::rightShiftAssignment;
   }
-  throw std::logic_error("Unsupported assignment operator: " + ctx->getText());
+  throw std::logic_error("Internal AST error: unsupported assignment operator `" +
+                         ctx->getText() + "`");
 }
 
 ComparisonOperator
@@ -80,7 +81,8 @@ ASTBuilder::getComparisonOperator(RxParser::ComparisonExceptLtContext *ctx) {
   } else if (ctx->NE()) {
     return ComparisonOperator::notEqual;
   }
-  throw std::logic_error("Unsupported comparison operator: " + ctx->getText());
+  throw std::logic_error("Internal AST error: unsupported comparison operator `" +
+                         ctx->getText() + "`");
 }
 
 std::unique_ptr<CrateNode> ASTBuilder::visitCrate(RxParser::CrateContext *ctx) {

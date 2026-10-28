@@ -1,0 +1,4 @@
+fn main() {
+    let mut values = Vec::<i32>::new();
+    Vec::<i32>::push(&mut values, true);
+}

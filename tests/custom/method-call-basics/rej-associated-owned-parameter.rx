@@ -1,0 +1,12 @@
+struct Item {
+    value: i32,
+}
+
+impl Item {
+    fn consume(item: Item) {}
+}
+
+fn main() {
+    let item = Item { value: 1 };
+    item.consume();
+}

@@ -1,0 +1,47 @@
+#[derive(PartialEq)]
+struct Record {
+    value: i32,
+}
+
+fn scalar_order(a: i32, b: i32, x: bool, y: bool) {
+    let lt: bool = a < b;
+    let le: bool = a <= b;
+    let gt: bool = a > b;
+    let ge: bool = a >= b;
+    let bool_order: bool = x < y;
+    let signed: bool = 1isize < 2isize;
+    let unsigned: bool = 1usize >= 2usize;
+}
+
+fn reference_order(a: &i32, b: &i32, c: &mut i32, d: &mut i32) {
+    let shared: bool = a < b;
+    let mutable: bool = c >= d;
+    let adjusted: bool = a <= c;
+}
+
+fn nested_reference_order(a: &&mut i32, b: &&mut i32, c: &mut &mut i32) {
+    let matching: bool = a > b;
+    let outer_adjustment: bool = a < c;
+}
+
+fn aggregate_equality(a: Record, b: Record, x: [Record; 2], y: [Record; 2]) {
+    let eq: bool = a == b;
+    let ne: bool = a != b;
+    let arrays: bool = x == y;
+}
+
+fn reference_equality(a: &Record, b: &Record, c: &mut Record, d: &mut Record) {
+    let shared: bool = a == b;
+    let mutable: bool = c != d;
+}
+
+fn container_equality(a: Box<Record>, b: Box<Record>, x: Vec<Record>, y: Vec<Record>) {
+    let boxes: bool = a == b;
+    let vectors: bool = x != y;
+}
+
+fn diverging_comparison() -> i32 {
+    ({ loop {}; 1i32 }) < 2i32;
+}
+
+fn main() {}

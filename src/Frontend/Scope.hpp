@@ -1,17 +1,11 @@
 #pragma once
 
-#include "AST.hpp"
 #include "SymbolCollector.hpp"
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
-
-struct Variable {
-  Type type;
-  bool isMut;
-  position pos;
-};
 
 class Scope {
 private:
@@ -25,6 +19,9 @@ public:
   virtual ~Scope() = default;
 
   void define(const std::string &name, const LocalSymbol &symbol) {
+    if (members.contains(name)) {
+      members.erase(name);
+    }
     members.emplace(name, symbol);
   }
 
@@ -85,11 +82,13 @@ public:
       : valueNameSpace(std::move(collector.table.valueNameSpace)),
         typeNameSpace(std::move(collector.table.typeNameSpace)) {
     for (auto &[implName, impl] : collector.table.implementations) {
-      if (!typeNameSpace.contains(implName)) {
-        error->occur(impl.pos, "Invalid Impl: object not found");
+      auto typeIterator = typeNameSpace.find(implName);
+      if (typeIterator == typeNameSpace.end()) {
+        error->occur(impl.pos,
+                     "Invalid Impl: cannot implement undefined struct `" +
+                         implName + "`");
       } else {
-        auto &object =
-            dynamic_cast<StructSymbol &>(*typeNameSpace.at(implName));
+        auto &object = dynamic_cast<StructSymbol &>(*typeIterator->second);
         for (std::size_t i = 0; i < impl.associateSymbols.size(); ++i) {
           auto &symbol = impl.associateSymbols[i];
           if (symbol->type == symbolType::Function) {
@@ -97,7 +96,9 @@ public:
             if (object.structSymbols.contains(func.name)) {
               error->occur(
                   impl.itemPos[i],
-                  "Invalid Associate Item: the function name has existed");
+                  "Invalid Associated Item: cannot define function `" +
+                      func.name + "`; name `" + func.name +
+                      "` is already defined in struct `" + implName + "`");
             } else {
               object.structSymbols.emplace(func.name, std::move(symbol));
             }
@@ -107,7 +108,9 @@ public:
             if (object.structSymbols.contains(constant.name)) {
               error->occur(
                   impl.itemPos[i],
-                  "Invalid Associate Item: the constant name has existed");
+                  "Invalid Associated Item: cannot define constant `" +
+                      constant.name + "`; name `" + constant.name +
+                      "` is already defined in struct `" + implName + "`");
             } else {
               object.structSymbols.emplace(constant.name, std::move(symbol));
             }
@@ -129,9 +132,24 @@ public:
     return nullptr;
   }
   StructSymbol *lookupStruct(const std::string &name) {
-    if (typeNameSpace.contains(name)) {
-      return dynamic_cast<StructSymbol *>(typeNameSpace.at(name).get());
+    auto iterator = typeNameSpace.find(name);
+    if (iterator != typeNameSpace.end()) {
+      return dynamic_cast<StructSymbol *>(iterator->second.get());
     }
     return nullptr;
   }
+};
+
+class ScopeGuard {
+private:
+  std::unique_ptr<Scope> &owner;
+  std::unique_ptr<Scope> parent;
+
+public:
+  ScopeGuard() = delete;
+  ScopeGuard(std::unique_ptr<Scope> &owner) : owner(owner) {
+    parent = std::move(owner);
+    owner = std::make_unique<Scope>(parent.get());
+  }
+  ~ScopeGuard() { owner = std::move(parent); }
 };
