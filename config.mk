@@ -4,7 +4,7 @@
 # {runtime} will be linked into every program.
 # Write shared runtime assembly there if your IR/CODEGEN output references it.
 BUILD = cmake -S . -B target/oj-build -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+    -DCMAKE_CXX_COMPILER=g++ \
     -DRX_FAST_BUILD=ON -DRX_USE_SYSTEM_ANTLR=ON && \
     cmake --build target/oj-build --target rx_compiler -j4 && : > {runtime}
 
