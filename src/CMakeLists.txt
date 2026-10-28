@@ -57,3 +57,5 @@ add_executable(rx_compiler main.cpp
   Frontend/SemanticAnalyzer.hpp
   Frontend/SemanticAnalyzer.cpp)
 target_link_libraries(rx_compiler PRIVATE rx_parser)
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Coverage.cmake")

@@ -67,6 +67,24 @@ make test VERBOSE=true
 
 `FILTER` 使用冒号分隔目录层级，多个选择用逗号分隔；`STAGE` 可设为 `semantic`、`ir`、`codegen` 或 `optimization`。其他选项（如编译和运行超时）可在 [`Makefile`](Makefile) 中查看。
 
+## 分支覆盖率
+
+覆盖率构建需要 GCC、与其版本匹配的 `gcov` 和 Python 3。它不修改 C++ 源码，也不影响 `config.mk` 中的 OJ 构建；`RX_ENABLE_COVERAGE` 默认关闭。
+
+```sh
+python3 -m venv target/coverage-venv
+target/coverage-venv/bin/python -m pip install -r scripts/requirements-coverage.txt
+PYTHON=target/coverage-venv/bin/python bash scripts/coverage.sh
+```
+
+脚本在独立的 `target/coverage-build` 中以 `-O0 --coverage` 构建，清除该目录上次运行的计数，再执行官方和自定义语义测试。报告只统计手写的 `src/Frontend/`、`src/AST/` 和 `src/main.cpp`，明确排除 `ASTPrinter.cpp/.hpp`，也不计 ANTLR runtime、生成的 Parser 和标准库；过滤编译器标记的异常抛出分支和不可达分支，以减少 C++ 编译器生成代码的干扰。
+
+- `target/coverage/index.html`：逐文件、逐行查看覆盖情况和未执行的分支；打开前保留同目录下所有文件。
+- `target/coverage/branches.txt`：每个文件的分支覆盖率。
+- `target/coverage/summary.json`：机器可读的覆盖率汇总。
+
+GitHub Actions 在每次 push/PR 时运行同一个脚本，可从工作流的 **Artifacts → semantic-coverage** 下载报告与测试日志。测试失败仍会尝试生成报告，且工作流保持失败状态。目前不设覆盖率门槛；覆盖率用于寻找测试盲区，不代表所有执行路径都已验证正确。
+
 ## Rx 语言参考
 
 - [Rx 语言规范](https://acmclasscourse-2025.github.io/rx-compiler-specification/)

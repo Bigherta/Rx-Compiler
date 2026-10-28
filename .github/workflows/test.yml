@@ -17,29 +17,25 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y build-essential cmake python3-venv
 
-      - name: Install Clang 22 for LLVM IR tests
+      - name: Install coverage tools
         run: |
-          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/llvm.gpg
-          echo 'deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-22 main' | sudo tee /etc/apt/sources.list.d/llvm.list
-          sudo apt-get update
-          sudo apt-get install -y clang-22
+          python3 -m venv target/coverage-venv
+          target/coverage-venv/bin/python -m pip install -r scripts/requirements-coverage.txt
 
-      - name: Set up xmake
-        uses: xmake-io/github-action-setup-xmake@v1
+      - name: Run semantic regression tests with branch coverage
+        env:
+          PYTHON: target/coverage-venv/bin/python
+        run: bash scripts/coverage.sh
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          xmake-version: latest
-
-      - name: Build REIMU
-        run: |
-          xmake f -y -P vendor/REIMU -m release -o target/reimu
-          xmake -y -P vendor/REIMU
-
-      - name: Set up Rust
-        run: |
-          rustup toolchain install 1.95.0 --profile minimal --target riscv32im-unknown-none-elf
-          rustup default 1.95.0
-
-      - name: Run tests
-        run: make test
+          name: semantic-coverage
+          path: |
+            target/coverage/
+            target/tests/
+          if-no-files-found: warn
+          retention-days: 14

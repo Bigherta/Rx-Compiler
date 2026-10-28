@@ -625,11 +625,18 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
                   "`NAME` or `Type::NAME`");
       return {Type(TypeKind::Error), nullptr};
     }
-    for (const auto &segment : pathInExpr->path.segments) {
-      if (!segment.args.genericArgs.empty() || segment.args.hasLifeTime) {
+    for (std::size_t i = 0; i < pathInExpr->path.segments.size(); ++i) {
+      const auto &segment = pathInExpr->path.segments[i];
+      const bool isStructQualifier =
+          pathInExpr->path.segments.size() == 2 && i == 0 &&
+          segment.pathIdentSegment != "Self" &&
+          segment.pathIdentSegment != "self";
+      if (!segment.args.genericArgs.empty() ||
+          (segment.args.hasLifeTime && !isStructQualifier)) {
         error.occur(pathInExpr->pos,
-                    "Invalid Constant Value: constant paths do not accept "
-                    "type or lifetime arguments");
+                    "Invalid Constant Value: constant names do not accept "
+                    "type or lifetime arguments; struct qualifiers only "
+                    "accept lifetime arguments");
         return {Type(TypeKind::Error), nullptr};
       }
     }
@@ -641,24 +648,9 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
                     "do not name a constant");
         return {Type(TypeKind::Error), nullptr};
       } else {
-        auto *implScope = findImplementationScope(currentScope.get());
-        if (auto *constantMember =
-                implScope ? implScope->lookupConstant(seg.pathIdentSegment)
-                          : nullptr;
-            constantMember) {
-          if (auto &kind = constantMember->constantType.kind;
-              kind != TypeKind::I32 && kind != TypeKind::U32 &&
-              kind != TypeKind::Isize && kind != TypeKind::Usize) {
-            error.occur(pathInExpr->pos,
-                        "Invalid Constant Value: the operand of unary `-` "
-                        "must have an integer type");
-            return {Type(TypeKind::Error), nullptr};
-          } else {
-            return {constantMember->constantType, constantMember};
-          }
-        } else if (auto *constantItem =
-                       globalScopeVisitor->lookupConstant(seg.pathIdentSegment);
-                   constantItem) {
+        if (auto *constantItem =
+                globalScopeVisitor->lookupConstant(seg.pathIdentSegment);
+            constantItem) {
           if (auto &kind = constantItem->constantType.kind;
               kind != TypeKind::I32 && kind != TypeKind::U32 &&
               kind != TypeKind::Isize && kind != TypeKind::Usize) {
@@ -796,11 +788,18 @@ auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
                   "`NAME` or `Type::NAME`");
       return {Type(TypeKind::Error), nullptr};
     }
-    for (const auto &segment : pathInExpr->path.segments) {
-      if (!segment.args.genericArgs.empty() || segment.args.hasLifeTime) {
+    for (std::size_t i = 0; i < pathInExpr->path.segments.size(); ++i) {
+      const auto &segment = pathInExpr->path.segments[i];
+      const bool isStructQualifier =
+          pathInExpr->path.segments.size() == 2 && i == 0 &&
+          segment.pathIdentSegment != "Self" &&
+          segment.pathIdentSegment != "self";
+      if (!segment.args.genericArgs.empty() ||
+          (segment.args.hasLifeTime && !isStructQualifier)) {
         error.occur(pathInExpr->pos,
-                    "Invalid Constant Value: constant paths do not accept "
-                    "type or lifetime arguments");
+                    "Invalid Constant Value: constant names do not accept "
+                    "type or lifetime arguments; struct qualifiers only "
+                    "accept lifetime arguments");
         return {Type(TypeKind::Error), nullptr};
       }
     }
@@ -812,15 +811,9 @@ auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
                     "do not name a constant");
         return {Type(TypeKind::Error), nullptr};
       } else {
-        auto *implScope = findImplementationScope(currentScope.get());
-        if (auto *constantMember =
-                implScope ? implScope->lookupConstant(seg.pathIdentSegment)
-                          : nullptr;
-            constantMember) {
-          return {constantMember->constantType, constantMember};
-        } else if (auto *constantItem =
-                       globalScopeVisitor->lookupConstant(seg.pathIdentSegment);
-                   constantItem) {
+        if (auto *constantItem =
+                globalScopeVisitor->lookupConstant(seg.pathIdentSegment);
+            constantItem) {
           return {constantItem->constantType, constantItem};
         } else {
           error.occur(pathInExpr->pos,
@@ -1176,9 +1169,24 @@ void SemanticAnalyzer::analyzeStructDependency(StructSymbol &symbol) {
 }
 
 void SemanticAnalyzer::checkConstant() {
+  auto checkDeclaredType = [this](ConstantSymbol *constant) {
+    auto &type = constant->constantType;
+    if (type.kind == TypeKind::Error) {
+      return false;
+    }
+    if (isIntegerType(type) || type.kind == TypeKind::Bool) {
+      return true;
+    }
+    error.occur(constant->node->constType->pos,
+                "Invalid Constant: `" + constant->name +
+                    "` must have type `i32`, `u32`, `isize`, `usize`, or `bool`");
+    type = Type(TypeKind::Error, type.pos);
+    return false;
+  };
   for (const auto &globalSymbol : globalScopeVisitor->valueNameSpace) {
     if (auto *constantSymbol =
-            dynamic_cast<ConstantSymbol *>(globalSymbol.second.get())) {
+            dynamic_cast<ConstantSymbol *>(globalSymbol.second.get());
+        constantSymbol && checkDeclaredType(constantSymbol)) {
       analyzeConstantDecl(constantSymbol);
     }
   }
@@ -1187,7 +1195,8 @@ void SemanticAnalyzer::checkConstant() {
             dynamic_cast<StructSymbol *>(globalSymbol.second.get())) {
       for (const auto &globalSymbol : structSymbol->structSymbols) {
         if (auto *constantSymbol =
-                dynamic_cast<ConstantSymbol *>(globalSymbol.second.get())) {
+                dynamic_cast<ConstantSymbol *>(globalSymbol.second.get());
+            constantSymbol && checkDeclaredType(constantSymbol)) {
           analyzeConstantDecl(constantSymbol, structSymbol);
         }
       }
@@ -2514,6 +2523,11 @@ std::any SemanticAnalyzer::visitPredicateLoopExpr(PredicateLoopExprNode *node) {
 }
 
 Type SemanticAnalyzer::LeastUpperBoundCoercion(const std::vector<Type> &types) {
+  if (std::any_of(types.begin(), types.end(), [](const Type &type) {
+        return type.kind == TypeKind::Error;
+      })) {
+    return Type(TypeKind::Error);
+  }
   bool foundNotNeverType = false;
   Type targetType(TypeKind::Never);
   for (std::size_t i = 0; i < types.size(); ++i) {
@@ -2813,7 +2827,7 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
       }
     }
   };
-  if (!expected || (expected && expected->kind != TypeKind::Array)) {
+  if (!expected || expected->kind != TypeKind::Array) {
     if (std::holds_alternative<std::vector<std::unique_ptr<ExprNode>>>(
             node->arrayEntries)) {
       const auto &entries =
@@ -2825,9 +2839,11 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
         isDiverge |= exprInfo.isDiverge;
         arrayTypes.emplace_back(exprInfo.type);
       }
-      auto entryType =
-          std::make_unique<Type>(LeastUpperBoundCoercion(arrayTypes));
-      arrayType.elementType = std::move(entryType);
+      auto entryType = LeastUpperBoundCoercion(arrayTypes);
+      if (entryType.kind == TypeKind::Error) {
+        return ExprInfo{Type(TypeKind::Error), false};
+      }
+      arrayType.elementType = std::make_unique<Type>(std::move(entryType));
       ConstValue length;
       length.state = EvaluatedState::Evaluated;
       length.value = static_cast<long long>(entries.size());
@@ -2837,6 +2853,9 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
           std::pair<std::unique_ptr<ExprNode>, std::unique_ptr<ConstExprNode>>>(
           node->arrayEntries);
       auto exprInfo = std::any_cast<ExprInfo>(value->accept(this));
+      if (exprInfo.type.kind == TypeKind::Error) {
+        return ExprInfo{Type(TypeKind::Error), false};
+      }
       isDiverge = exprInfo.isDiverge;
       auto entryType = std::make_unique<Type>(exprInfo.type);
       arrayType.elementType = std::move(entryType);
@@ -2844,9 +2863,6 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
       arrayType.arrayLen->ctx = length.get();
       resolveArrayLengths(arrayType);
       checkRepeatedElementCopy();
-    }
-    if (expected && !checkCoercionEnability(arrayType, *expected)) {
-      arrayType = Type(TypeKind::Error);
     }
   } else {
     auto *expectedType = expected->elementType.get();
