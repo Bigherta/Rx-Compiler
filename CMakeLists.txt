@@ -1,18 +1,20 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.28)
 
-# Select Clang before project() enables compiler detection.
+# Select GCC 14 before project() enables compiler detection.
 if(NOT DEFINED CMAKE_C_COMPILER)
-  set(CMAKE_C_COMPILER clang CACHE STRING "C compiler")
+  set(CMAKE_C_COMPILER gcc-14 CACHE STRING "C compiler")
 endif()
 if(NOT DEFINED CMAKE_CXX_COMPILER)
-  set(CMAKE_CXX_COMPILER clang++ CACHE STRING "C++ compiler")
+  set(CMAKE_CXX_COMPILER g++-14 CACHE STRING "C++ compiler")
 endif()
+set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/GccCxx26Compat.cmake")
 
 project(rx_parser LANGUAGES CXX)
 
 include(CTest)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

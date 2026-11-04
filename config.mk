@@ -4,17 +4,15 @@
 # {runtime} will be linked into every program.
 # Write shared runtime assembly there if your IR/CODEGEN output references it.
 BUILD = cmake -S . -B target/oj-build -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_COMPILER=g++ \
+    -DCMAKE_CXX_COMPILER=g++-14 \
     -DRX_FAST_BUILD=ON -DRX_USE_SYSTEM_ANTLR=ON && \
     cmake --build target/oj-build --target rx_compiler -j4 && : > {runtime}
 
 # Required for semantic tests: exit 0 to accept {source}, 1 to reject it.
-SEMANTIC = ./target/oj-build/src/rx_compiler {source}
+SEMANTIC = ./target/oj-build/src/rx_compiler --check {source}
 
 # Required for IR tests: write RV32 LLVM IR to {output} (.ll).
-IR = RUST_MIN_STACK=16777216 RX_SOURCE={source} $(REFERENCE_RUSTC) --crate-type=staticlib \
-    --emit=llvm-ir={output},link={output}.a -C opt-level=2 -C lto=fat \
-    crates/rx/src/entry.rs
+IR = ./target/oj-build/src/rx_compiler {source} -o {output}
 
 # Required for codegen/optimization tests: write RV32IM assembly to {output} (.s).
 CODEGEN = RUST_MIN_STACK=16777216 RX_SOURCE={source} $(REFERENCE_RUSTC) --crate-type=staticlib \

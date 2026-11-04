@@ -21,7 +21,9 @@ from strip_asm_debug import strip_debug
 
 RUNTIME_STAGES = ("ir", "codegen", "optimization")
 STAGES = ("semantic", *RUNTIME_STAGES)
-MANIFEST_STAGES = ("semantic", "codegen", "optimization")
+# Local manifests may declare IR-only cases before assembly codegen is ready.
+# Official codegen cases still run at both the IR and codegen stages.
+MANIFEST_STAGES = STAGES
 
 
 class TestError(Exception):
@@ -222,7 +224,7 @@ def discover(root):
         except (TestError, ValueError, OSError) as error:
             raise TestError(f"{manifest}: {error}") from error
     if not cases:
-        raise TestError(f"no semantic, codegen, or optimization testcases found under {root}")
+        raise TestError(f"no semantic, ir, codegen, or optimization testcases found under {root}")
     return [case for stage in STAGES for case in cases if case.stage == stage]
 
 

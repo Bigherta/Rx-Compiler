@@ -666,13 +666,11 @@ std::any ASTPrinter::visitContinueExpr(ContinueExprNode *) {
 
 std::any ASTPrinter::visitBreakExpr(BreakExprNode *node) {
   std::cout << "Break Expr" << '\n';
-  if (node->loopValue) {
-    std::cout << prefix << "└── ";
-    const std::string oldPrefix = prefix;
-    prefix += "    ";
-    node->loopValue->get()->accept(this);
-    prefix = oldPrefix;
-  }
+  std::cout << prefix << "└── ";
+  const std::string oldPrefix = prefix;
+  prefix += "    ";
+  node->loopValue->accept(this);
+  prefix = oldPrefix;
   return {};
 }
 

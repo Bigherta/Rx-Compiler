@@ -95,8 +95,11 @@ public:
   virtual ~ASTNode() = default;
   virtual std::any accept(ASTVisitor *visitor) = 0;
 };
+
+struct TypeSemantic;
 class TypeNode : public ASTNode {
 public:
+  std::unique_ptr<TypeSemantic> semantic;
   TypeNode(const position &pos);
   TypeNode(TypeNode &&) noexcept;
   TypeNode &operator=(TypeNode &&) noexcept;
@@ -109,8 +112,10 @@ public:
   virtual ~ItemNode() = default;
 };
 
+struct ExprSemantic;
 class ExprNode : public ASTNode {
 public:
+  std::unique_ptr<ExprSemantic> semantic;
   ExprNode(const position &pos);
   ExprNode(ExprNode &&) noexcept;
   ExprNode &operator=(ExprNode &&) noexcept;
@@ -133,10 +138,14 @@ public:
   virtual ~ExprWithoutBlockNode() = default;
 };
 
+struct StmtSemantic;
 class StmtNode : public ASTNode {
 public:
-  using ASTNode::ASTNode;
-  virtual ~StmtNode() = default;
+  std::unique_ptr<StmtSemantic> semantic;
+  StmtNode(const position &pos);
+  StmtNode(StmtNode &&) noexcept;
+  StmtNode &operator=(StmtNode &&) noexcept;
+  virtual ~StmtNode();
 };
 
 struct GenericArg {
@@ -417,14 +426,6 @@ public:
   }
 };
 
-inline ExprNode::ExprNode(const position &pos) : ASTNode(pos) {}
-
-inline ExprNode::ExprNode(ExprNode &&) noexcept = default;
-
-inline TypeNode::TypeNode(const position &pos) : ASTNode(pos) {}
-
-inline TypeNode::TypeNode(TypeNode &&) noexcept = default;
-
 inline PathInExprNode::PathInExprNode(const position &pos)
     : ExprWithoutBlockNode(pos) {
   kind = nodeKind::PathInExpr;
@@ -556,13 +557,17 @@ public:
 class BreakExprNode : public ExprWithoutBlockNode {
 public:
   virtual std::any accept(ASTVisitor *visitor) override;
-  std::optional<std::unique_ptr<ExprNode>> loopValue;
+  std::unique_ptr<ExprNode> loopValue;
+  // Distinguish bare break from break (), which is forbidden in while loops.
+  bool hasExplicitValue;
   BreakExprNode(const position &pos)
-      : ExprWithoutBlockNode(pos), loopValue(std::nullopt) {
+      : ExprWithoutBlockNode(pos),
+        loopValue(std::make_unique<UnitExprNode>(pos)), hasExplicitValue(false) {
     kind = nodeKind::BreakExpr;
   }
   BreakExprNode(const position &pos, std::unique_ptr<ExprNode> value)
-      : ExprWithoutBlockNode(pos), loopValue(std::move(value)) {
+      : ExprWithoutBlockNode(pos), loopValue(std::move(value)),
+        hasExplicitValue(true) {
     kind = nodeKind::BreakExpr;
   }
 };
@@ -654,15 +659,17 @@ public:
   std::vector<std::unique_ptr<ItemNode>> items;
   CrateNode(const position &pos) : ASTNode(pos) { kind = nodeKind::Crate; }
 };
-
+struct LocalSymbol;
 struct SelfParam {
   bool isRef;
   bool isMut;
+  const  LocalSymbol* paramSymbol = nullptr;
 };
 struct FunctionParam {
   bool isMut;
   std::string identifier;
   std::unique_ptr<TypeNode> paramType;
+  const  LocalSymbol* paramSymbol = nullptr;
 };
 class FunctionDeclItemNode : public ItemNode {
 public:

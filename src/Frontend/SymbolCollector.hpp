@@ -3,6 +3,7 @@
 #include "AST.hpp"
 #include "ASTBaseVisitor.hpp"
 #include <bitset>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <optional>
@@ -216,54 +217,6 @@ struct GlobalSymbol {
   virtual ~GlobalSymbol() = default;
 };
 
-struct FunctionSymbol : GlobalSymbol {
-  std::string name;
-  Type functionalType;
-  Type returnType;
-  std::vector<Type> paramTypes;
-  ReceiverKind receiver = ReceiverKind::None;
-  FunctionSymbol(const std::string &funcName)
-      : GlobalSymbol(symbolType::Function), name(funcName),
-        returnType(TypeKind::Unit) {
-    functionalType.kind = TypeKind::Function;
-    functionalType.functionSymbol = this;
-  }
-  FunctionSymbol(const std::string &funcName, const Type &returnType,
-                 const std::vector<Type> &funcParams)
-      : GlobalSymbol(symbolType::Function), name(funcName),
-        returnType(returnType) {
-    paramTypes = funcParams;
-    functionalType.kind = TypeKind::Function;
-    functionalType.functionSymbol = this;
-  }
-  FunctionSymbol(const std::string &funcName,
-                 const std::vector<Type> &funcParams)
-      : FunctionSymbol(funcName, Type(TypeKind::Unit), funcParams) {
-    functionalType.kind = TypeKind::Function;
-    functionalType.functionSymbol = this;
-  }
-  FunctionSymbol(FunctionSymbol &&other) noexcept
-      : GlobalSymbol(other), name(std::move(other.name)),
-        functionalType(std::move(other.functionalType)),
-        returnType(std::move(other.returnType)),
-        paramTypes(std::move(other.paramTypes)), receiver(other.receiver) {
-    // The function type stores a self pointer, so a moved symbol must point at
-    // its final address instead of the source object.
-    functionalType.functionSymbol = this;
-  }
-};
-
-struct ConstantSymbol : GlobalSymbol {
-  std::string name;
-  Type constantType;
-  ConstantDeclItemNode *node = nullptr;
-  ConstantSymbol *dependency = nullptr;
-  ConstValue value;
-  ConstantSymbol(const std::string &constantName, const Type &constantType)
-      : GlobalSymbol(symbolType::Constant), name(constantName),
-        constantType(constantType) {}
-};
-
 struct StructSymbol : GlobalSymbol {
   enum class dependencyCheckState {
     NotAccess,
@@ -273,6 +226,7 @@ struct StructSymbol : GlobalSymbol {
   std::bitset<4> outAttribute; // 4 bits represent the 4 attributes
   std::bitset<4> traitValid;
   std::string name;
+  std::vector<std::string> layoutFields; 
   std::unordered_map<std::string, Type> structFields;
   std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>> structSymbols;
   std::vector<StructSymbol *> dependency;
@@ -352,6 +306,58 @@ public:
   }
 };
 
+struct FunctionSymbol : GlobalSymbol {
+  std::string name;
+  Type functionalType;
+  Type returnType;
+  std::vector<Type> paramTypes;
+  ReceiverKind receiver = ReceiverKind::None;
+  StructSymbol *owner = nullptr;
+  // Non-owning; the AST must outlive uses of this declaration. Null for built-ins.
+  FunctionDeclItemNode *declaration = nullptr;
+  FunctionSymbol(const std::string &funcName)
+      : GlobalSymbol(symbolType::Function), name(funcName),
+        returnType(TypeKind::Unit) {
+    functionalType.kind = TypeKind::Function;
+    functionalType.functionSymbol = this;
+  }
+  FunctionSymbol(const std::string &funcName, const Type &returnType,
+                 const std::vector<Type> &funcParams)
+      : GlobalSymbol(symbolType::Function), name(funcName),
+        returnType(returnType) {
+    paramTypes = funcParams;
+    functionalType.kind = TypeKind::Function;
+    functionalType.functionSymbol = this;
+  }
+  FunctionSymbol(const std::string &funcName,
+                 const std::vector<Type> &funcParams)
+      : FunctionSymbol(funcName, Type(TypeKind::Unit), funcParams) {
+    functionalType.kind = TypeKind::Function;
+    functionalType.functionSymbol = this;
+  }
+  FunctionSymbol(FunctionSymbol &&other) noexcept
+      : GlobalSymbol(other), name(std::move(other.name)),
+        functionalType(std::move(other.functionalType)),
+        returnType(std::move(other.returnType)),
+        paramTypes(std::move(other.paramTypes)), receiver(other.receiver) {
+    // The function type stores a self pointer, so a moved symbol must point at
+    // its final address instead of the source object.
+    functionalType.functionSymbol = this;
+    owner = other.owner;
+    declaration = other.declaration;
+  }
+};
+
+struct ConstantSymbol : GlobalSymbol {
+  std::string name;
+  Type constantType;
+  ConstantDeclItemNode *node = nullptr;
+  ConstantSymbol *dependency = nullptr;
+  ConstValue value;
+  ConstantSymbol(const std::string &constantName, const Type &constantType)
+      : GlobalSymbol(symbolType::Constant), name(constantName),
+        constantType(constantType) {}
+};
 struct ImplSymbol : GlobalSymbol {
   std::vector<position> itemPos;
   std::string name;
@@ -366,19 +372,6 @@ public:
   std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>> typeNameSpace;
 
   std::vector<std::pair<std::string, ImplSymbol>> implementations;
-  SymbolTable() {
-    valueNameSpace.emplace(
-        "get_i32", std::make_unique<FunctionSymbol>(
-                       "get_i32", Type{TypeKind::I32}, std::vector<Type>{}));
-    valueNameSpace.emplace("print_i32",
-                           std::make_unique<FunctionSymbol>(
-                               "print_i32", Type{TypeKind::Unit},
-                               std::vector<Type>{Type{TypeKind::I32}}));
-    valueNameSpace.emplace("println_i32",
-                           std::make_unique<FunctionSymbol>(
-                               "println_i32", Type{TypeKind::Unit},
-                               std::vector<Type>{Type{TypeKind::I32}}));
-  }
 };
 
 class DiagnosticError {

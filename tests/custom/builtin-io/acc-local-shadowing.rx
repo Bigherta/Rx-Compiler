@@ -1,0 +1,9 @@
+fn use_parameter(print_i32: i32) -> i32 {
+    print_i32
+}
+
+fn main() {
+    let get_i32: i32 = 1;
+    let print_i32: i32 = use_parameter(get_i32);
+    let println_i32: i32 = print_i32;
+}

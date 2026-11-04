@@ -1,0 +1,3 @@
+CompileFlags:
+  # Always use the root build, not a stale nested src/build database.
+  CompilationDatabase: build

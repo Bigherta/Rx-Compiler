@@ -24,3 +24,8 @@ build
 # vscode
 .vscode
 build-test
+
+#IR
+/IR.ll
+/src/IR.ll
+/.cache/

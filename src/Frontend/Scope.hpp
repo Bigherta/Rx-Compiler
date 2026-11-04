@@ -10,7 +10,7 @@
 class Scope {
 private:
   // Symbols and their types in the current scope.
-  std::unordered_map<std::string, LocalSymbol> members;
+  std::unordered_map<std::string, const LocalSymbol *> members;
 
 public:
   Scope *parentScope;
@@ -22,13 +22,13 @@ public:
     if (members.contains(name)) {
       members.erase(name);
     }
-    members.emplace(name, symbol);
+    members.emplace(name, &symbol);
   }
 
   const LocalSymbol *lookup(const std::string &name) const {
     auto it = members.find(name);
     if (it != members.end()) {
-      return &it->second;
+      return it->second;
     }
     return parentScope ? parentScope->lookup(name) : nullptr;
   }
@@ -94,11 +94,11 @@ public:
           if (symbol->type == symbolType::Function) {
             const auto &func = dynamic_cast<const FunctionSymbol &>(*symbol);
             if (object.structSymbols.contains(func.name)) {
-              error->occur(
-                  impl.itemPos[i],
-                  "Invalid Associated Item: cannot define function `" +
-                      func.name + "`; name `" + func.name +
-                      "` is already defined in struct `" + implName + "`");
+              error->occur(impl.itemPos[i],
+                           "Invalid Associated Item: cannot define function `" +
+                               func.name + "`; name `" + func.name +
+                               "` is already defined in struct `" + implName +
+                               "`");
             } else {
               object.structSymbols.emplace(func.name, std::move(symbol));
             }
@@ -106,11 +106,11 @@ public:
             const auto &constant =
                 dynamic_cast<const ConstantSymbol &>(*symbol);
             if (object.structSymbols.contains(constant.name)) {
-              error->occur(
-                  impl.itemPos[i],
-                  "Invalid Associated Item: cannot define constant `" +
-                      constant.name + "`; name `" + constant.name +
-                      "` is already defined in struct `" + implName + "`");
+              error->occur(impl.itemPos[i],
+                           "Invalid Associated Item: cannot define constant `" +
+                               constant.name + "`; name `" + constant.name +
+                               "` is already defined in struct `" + implName +
+                               "`");
             } else {
               object.structSymbols.emplace(constant.name, std::move(symbol));
             }

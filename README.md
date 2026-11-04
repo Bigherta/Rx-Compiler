@@ -32,7 +32,7 @@ cmake -S . -B build
 cmake --build build
 ```
 
-构建需要支持 C++23 的编译器和 CMake 3.15 或更新版本。使用方式、入口规则、parse tree 遍历以及错误处理详见 [`docs/parser.md`](docs/parser.md)。文法定义位于 [`grammar/`](grammar/)。
+构建默认使用 GCC 14、C++26 和 CMake 3.28 或更新版本。使用方式、入口规则、parse tree 遍历以及错误处理详见 [`docs/parser.md`](docs/parser.md)。文法定义位于 [`grammar/`](grammar/)。
 
 OJ 的 `BUILD` 配置启用 `RX_USE_SYSTEM_ANTLR=ON`，直接链接评测环境预装的 ANTLR C++ runtime，不编译 `vendor/antlr4-cpp`。配置时会打印库版本和路径；当前生成代码要求 runtime 为 **4.13.x**，缺少开发包或版本不兼容时会立即报错，不会退回耗时的源码构建。非标准安装位置可通过 `RX_ANTLR_INCLUDE_DIR` 和 `RX_ANTLR_LIBRARY` 指定。
 
@@ -40,15 +40,16 @@ OJ 的 `BUILD` 配置启用 `RX_USE_SYSTEM_ANTLR=ON`，直接链接评测环境�
 
 ## 运行测试
 
-测试命令在 [`config.mk`](config.mk) 中配置，根目录 Makefile 调用 Python 测试运行器。当前 `BUILD`、`SEMANTIC` 使用本项目的 C++ 编译器和系统 ANTLR runtime；`IR`、`CODEGEN` 仍是参考 `rustc` 命令，尚未接入自己的后端。本地若使用上述 `build` 目录中的随仓库 runtime 构建产物，可运行 `make test BUILD= SEMANTIC='./build/src/rx_compiler {source}' FILTER=official:semantic STAGE=semantic`。
+测试命令在 [`config.mk`](config.mk) 中配置，根目录 Makefile 调用 Python 测试运行器。当前 `SEMANTIC` 使用本项目编译器的 `--check` 模式，仅进行前端检查；`IR` 使用本项目编译器的 `-o {output}` 输出 LLVM IR；`CODEGEN` 仍使用参考 `rustc`。默认不指定 `-o` 时，编译器保持输出当前目录下的 `IR.ll`。默认 `BUILD` 链接系统 ANTLR runtime。本地若使用上述 `build` 目录中的随仓库 runtime 构建产物，可运行 `make test BUILD= SEMANTIC='./build/src/rx_compiler --check {source}' FILTER=official:semantic STAGE=semantic`。
 
-运行测试前，需要准备 Python 3、xmake、Rust 工具链及 `riscv32im-unknown-none-elf` target；IR 测试还需要 `clang-22`。REIMU 首次构建命令如下：
+运行测试前，需要准备 Python 3 和 xmake；IR 测试还需要 `clang-22`。参考 `CODEGEN` 命令另外需要 Rust 工具链及 `riscv32im-unknown-none-elf` target。REIMU 首次构建命令如下：
 
 ```sh
-rustup target add riscv32im-unknown-none-elf
 xmake f -y -P vendor/REIMU -m release -o target/reimu
 xmake -y -P vendor/REIMU
 ```
+
+使用参考 `CODEGEN` 时，另需运行 `rustup target add riscv32im-unknown-none-elf`。
 
 运行全部测试：
 
@@ -66,6 +67,18 @@ make test VERBOSE=true
 ```
 
 `FILTER` 使用冒号分隔目录层级，多个选择用逗号分隔；`STAGE` 可设为 `semantic`、`ir`、`codegen` 或 `optimization`。其他选项（如编译和运行超时）可在 [`Makefile`](Makefile) 中查看。
+
+### 自有后端的 IR 测试
+
+后端仍在逐步实现，可先只运行当前支持的最小程序：
+
+```sh
+make test FILTER=custom:ir STAGE=ir
+```
+
+此命令使用本项目编译器生成独立的 `.ll` 文件，再通过 `clang-22` 将其编译为 RV32IM 汇编，最后在 REIMU 中执行并比较标准输出。IR 语法或 LLVM 类型错误、REIMU 执行失败、超时、输出不匹配都会使测试失败；不会调用参考 Rust 编译器替代 IR 生成。
+
+本地 `tests/custom/` 清单扩展支持 `"stage": "ir"`，用例必须设置 `compilation_success: true` 并提供至少一组 `io`；空输出使用空 `.out` 文件。已有 `codegen` 用例仍自动派生出同名 IR 用例，不需要修改官方子模块的清单或 Schema。所有 IR 用例复用测试运行器中同一条 Clang/REIMU 流程。`make test STAGE=ir` 会同时选择官方 IR 用例，后端未完成时预期仍有失败。
 
 ## 分支覆盖率
 

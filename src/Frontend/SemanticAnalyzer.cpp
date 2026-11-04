@@ -1,10 +1,10 @@
 #include "SemanticAnalyzer.hpp"
 #include "AST.hpp"
 #include "Scope.hpp"
+#include "SemanticResult.hpp"
 #include "SymbolCollector.hpp"
 #include <algorithm>
 #include <any>
-#include <cerrno>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -24,9 +24,8 @@ implementationScope *SemanticAnalyzer::findImplementationScope(Scope *scope) {
 }
 
 Type SemanticAnalyzer::parseIntegerLiteral(const position &position,
-                                           std::string literal,
-                                           DiagnosticError *err,
-                                           bool isNegative, Type *expected) {
+                                           std::string literal, bool isNegative,
+                                           Type *expected) {
   literal.erase(std::remove(literal.begin(), literal.end(), '_'),
                 literal.end());
   int base;
@@ -320,7 +319,9 @@ std::string SemanticAnalyzer::encodeType(const Type &type) const {
 }
 
 Type SemanticAnalyzer::autoDereference(const Type *refType, bool &mutablePlace,
-                                       bool &mutationBlocked) {
+                                       bool &mutationBlocked,
+                                       std::vector<Adjustment> &adjusts) {
+  adjusts.clear();
   mutablePlace &= !mutationBlocked;
   while (refType->kind == TypeKind::ImmutReference ||
          refType->kind == TypeKind::MutReference ||
@@ -331,20 +332,28 @@ Type SemanticAnalyzer::autoDereference(const Type *refType, bool &mutablePlace,
     } else {
       mutablePlace |= refType->kind == TypeKind::MutReference;
     }
+    adjusts.emplace_back(
+        Adjustment{AdjustmentKind::Deref, *refType->elementType});
     refType = refType->elementType.get();
   }
   return *refType;
 }
 
+Type SemanticAnalyzer::saveType(TypeNode *node, Type &&type) {
+  node->semantic =
+      std::make_unique<TypeSemantic>(TypeSemantic{std::move(type)});
+  return node->semantic->semanticType;
+}
+
 std::any SemanticAnalyzer::visitUnitType(UnitTypeNode *node) {
-  return Type(TypeKind::Unit, node->pos);
+  return saveType(node, Type(TypeKind::Unit, node->pos));
 }
 
 std::any SemanticAnalyzer::visitPathInType(PathInTypeNode *node) {
   if (node->path.segments.size() > 1) {
     error.occur(node->pos,
                 "Invalid Type: a type path must contain a single segment");
-    return Type(TypeKind::Error, node->pos);
+    return saveType(node, Type(TypeKind::Error, node->pos));
   }
   const auto &seg = node->path.segments.front();
   if (seg.pathIdentSegment == "i32" || seg.pathIdentSegment == "u32" ||
@@ -354,18 +363,18 @@ std::any SemanticAnalyzer::visitPathInType(PathInTypeNode *node) {
       error.occur(node->pos,
                   "Invalid Type: primitive type `" + seg.pathIdentSegment +
                       "` does not accept type or lifetime arguments");
-      return Type(TypeKind::Error, node->pos);
+      return saveType(node, Type(TypeKind::Error, node->pos));
     }
     if (seg.pathIdentSegment == "i32") {
-      return Type(TypeKind::I32, node->pos);
+      return saveType(node, Type(TypeKind::I32, node->pos));
     } else if (seg.pathIdentSegment == "isize") {
-      return Type(TypeKind::Isize, node->pos);
+      return saveType(node, Type(TypeKind::Isize, node->pos));
     } else if (seg.pathIdentSegment == "u32") {
-      return Type(TypeKind::U32, node->pos);
+      return saveType(node, Type(TypeKind::U32, node->pos));
     } else if (seg.pathIdentSegment == "usize") {
-      return Type(TypeKind::Usize, node->pos);
+      return saveType(node, Type(TypeKind::Usize, node->pos));
     } else {
-      return Type(TypeKind::Bool, node->pos);
+      return saveType(node, Type(TypeKind::Bool, node->pos));
     }
   }
   if (seg.pathIdentSegment == "Vec" || seg.pathIdentSegment == "Box") {
@@ -373,10 +382,9 @@ std::any SemanticAnalyzer::visitPathInType(PathInTypeNode *node) {
       error.occur(node->pos, "Invalid Type: `" + seg.pathIdentSegment +
                                  "` requires exactly one type argument "
                                  "and no lifetime arguments");
-      return Type(TypeKind::Error, node->pos);
+      return saveType(node, Type(TypeKind::Error, node->pos));
     }
-    Type genericType;
-    genericType.pos = node->pos;
+    Type genericType(TypeKind::Error, node->pos);
     genericType.elementType = std::make_unique<Type>(std::any_cast<Type>(
         seg.args.genericArgs.front().genericArgType->accept(this)));
     if (genericType.elementType->kind != TypeKind::Error) {
@@ -385,12 +393,12 @@ std::any SemanticAnalyzer::visitPathInType(PathInTypeNode *node) {
     } else {
       genericType.kind = TypeKind::Error;
     }
-    return genericType;
+    return saveType(node, std::move(genericType));
   }
   if (!seg.args.genericArgs.empty()) {
     error.occur(node->pos, "Invalid Type: struct `" + seg.pathIdentSegment +
                                "` does not accept type arguments");
-    return Type(TypeKind::Error, node->pos);
+    return saveType(node, Type(TypeKind::Error, node->pos));
   }
   Type structType(TypeKind::Struct, node->pos);
   const auto &structName = node->path.segments.front().pathIdentSegment;
@@ -398,14 +406,14 @@ std::any SemanticAnalyzer::visitPathInType(PathInTypeNode *node) {
     if (seg.args.hasLifeTime) {
       error.occur(node->pos,
                   "Invalid Type: `Self` does not accept lifetime arguments");
-      return Type(TypeKind::Error, node->pos);
+      return saveType(node, Type(TypeKind::Error, node->pos));
     }
     auto currentStruct = getSelfName();
     if (!currentStruct) {
       error.occur(
           node->pos,
           "Invalid Type: `Self` requires an enclosing struct implementation");
-      return Type(TypeKind::Error, node->pos);
+      return saveType(node, Type(TypeKind::Error, node->pos));
     } else {
       structType.structName = currentStruct;
     }
@@ -416,15 +424,14 @@ std::any SemanticAnalyzer::visitPathInType(PathInTypeNode *node) {
     } else {
       error.occur(node->pos,
                   "Invalid Type: undefined struct `" + structName + "`");
-      return Type(TypeKind::Error, node->pos);
+      return saveType(node, Type(TypeKind::Error, node->pos));
     }
   }
-  return structType;
+  return saveType(node, std::move(structType));
 }
 
 std::any SemanticAnalyzer::visitReferenceType(ReferenceTypeNode *node) {
-  Type refType;
-  refType.pos = node->pos;
+  Type refType(TypeKind::Error, node->pos);
   refType.elementType =
       std::make_unique<Type>(std::any_cast<Type>(node->refType->accept(this)));
   if (refType.elementType->kind != TypeKind::Error) {
@@ -433,22 +440,22 @@ std::any SemanticAnalyzer::visitReferenceType(ReferenceTypeNode *node) {
   } else {
     refType.kind = TypeKind::Error;
   }
-  return refType;
+  return saveType(node, std::move(refType));
 }
 
 std::any SemanticAnalyzer::visitArrayType(ArrayTypeNode *node) {
-  Type type(TypeKind::Array, node->pos);
-  type.elementType = std::make_unique<Type>(
+  Type arrayType(TypeKind::Array, node->pos);
+  arrayType.elementType = std::make_unique<Type>(
       std::any_cast<Type>(node->typeParam->accept(this)));
 
-  if (type.elementType->kind == TypeKind::Error) {
-    return Type(TypeKind::Error, node->pos);
+  if (arrayType.elementType->kind == TypeKind::Error) {
+    return saveType(node, Type(TypeKind::Error, node->pos));
   }
 
-  type.arrayLen.emplace();
-  type.arrayLen->ctx = node->length.get();
-  resolveArrayLengths(type);
-  return type;
+  arrayType.arrayLen.emplace();
+  arrayType.arrayLen->ctx = node->length.get();
+  resolveArrayLengths(arrayType);
+  return saveType(node, std::move(arrayType));
 }
 
 std::any SemanticAnalyzer::visitCrate(CrateNode *node) {
@@ -506,8 +513,12 @@ std::any SemanticAnalyzer::visitFunctionDeclItem(FunctionDeclItemNode *node) {
                   : globalScopeVisitor->lookupFunction(node->identifier);
   if (functionSymbol) {
     functionSymbol->returnType = returnType;
+    if (structScope) {
+      functionSymbol->owner =
+          globalScopeVisitor->lookupStruct(structScope->structName);
+    }
   }
-  ScopeGuard scopeGuard(currentScope);
+  auto _ = ScopeGuard(currentScope);
   if (node->selfParam != std::nullopt) {
     if (structScope == nullptr) {
       error.occur(node->pos, "Invalid Function: a top-level function cannot "
@@ -522,9 +533,10 @@ std::any SemanticAnalyzer::visitFunctionDeclItem(FunctionDeclItemNode *node) {
         refType.elementType = std::make_unique<Type>(selfType);
         selfType = std::move(refType);
       }
-      currentScope->define(
-          "self",
-          LocalSymbol(node->pos, "self", self.isMut && !self.isRef, selfType));
+      localBindings.emplace_back(std::make_unique<LocalSymbol>(
+          node->pos, "self", self.isMut && !self.isRef, selfType));
+      currentScope->define("self", *localBindings.back());
+      node->selfParam->paramSymbol = localBindings.back().get();
     }
   }
   for (auto &param : node->functionParam) {
@@ -534,20 +546,19 @@ std::any SemanticAnalyzer::visitFunctionDeclItem(FunctionDeclItemNode *node) {
                                  "` conflicts with an existing binding");
     } else {
       Type paramType = std::any_cast<Type>(param.paramType->accept(this));
-      currentScope->define(
-          param.identifier,
-          LocalSymbol(node->pos, param.identifier, param.isMut, paramType));
+      localBindings.emplace_back(std::make_unique<LocalSymbol>(
+          node->pos, param.identifier, param.isMut, paramType));
+      currentScope->define(param.identifier, *localBindings.back());
+      param.paramSymbol = localBindings.back().get();
     }
   }
-  FunctionGuard functionGuard(functionInfoContainer,
-                              FunctionContext(&returnType));
+  auto _ = FunctionGuard(functionInfoContainer, FunctionContext(&returnType));
   checkExpr(node->functionBody.get(), &returnType);
   return {};
 }
 
 void SemanticAnalyzer::analyzeConstantDecl(ConstantSymbol *constant) {
   auto *node = constant->node;
-  auto *globalScope = this->globalScopeVisitor;
   auto *constantSymbol = globalScopeVisitor->lookupConstant(node->identifier);
   if (!constantSymbol || constantSymbol->node != node) {
     return;
@@ -610,14 +621,19 @@ void SemanticAnalyzer::analyzeConstantDecl(ConstantSymbol *constant,
 
 auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
     -> std::pair<Type, ConstantSymbol *> {
+  node->semantic = std::make_unique<ExprSemantic>();
   if (std::holds_alternative<std::string>(node->magnitude)) {
-    return {parseIntegerLiteral(node->pos,
-                                std::get<std::string>(node->magnitude), &error,
-                                true),
-            nullptr};
+    auto type = parseIntegerLiteral(
+        node->pos, std::get<std::string>(node->magnitude), true);
+    node->semantic->originalType = type;
+    node->semantic->adjustedType = type;
+    return {type, nullptr};
   } else {
     auto *pathInExpr =
         std::get<std::unique_ptr<PathInExprNode>>(node->magnitude).get();
+    pathInExpr->semantic = std::make_unique<ValuePathInExprSemantic>();
+    auto *pathSemantic =
+        static_cast<ValuePathInExprSemantic *>(pathInExpr->semantic.get());
     if (pathInExpr->path.segments.size() != 1 &&
         pathInExpr->path.segments.size() != 2) {
       error.occur(pathInExpr->pos,
@@ -627,10 +643,10 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
     }
     for (std::size_t i = 0; i < pathInExpr->path.segments.size(); ++i) {
       const auto &segment = pathInExpr->path.segments[i];
-      const bool isStructQualifier =
-          pathInExpr->path.segments.size() == 2 && i == 0 &&
-          segment.pathIdentSegment != "Self" &&
-          segment.pathIdentSegment != "self";
+      const bool isStructQualifier = pathInExpr->path.segments.size() == 2 &&
+                                     i == 0 &&
+                                     segment.pathIdentSegment != "Self" &&
+                                     segment.pathIdentSegment != "self";
       if (!segment.args.genericArgs.empty() ||
           (segment.args.hasLifeTime && !isStructQualifier)) {
         error.occur(pathInExpr->pos,
@@ -651,6 +667,9 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
         if (auto *constantItem =
                 globalScopeVisitor->lookupConstant(seg.pathIdentSegment);
             constantItem) {
+          pathSemantic->bindingSymbol = constantItem;
+          pathSemantic->originalType = constantItem->constantType;
+          pathSemantic->adjustedType = constantItem->constantType;
           if (auto &kind = constantItem->constantType.kind;
               kind != TypeKind::I32 && kind != TypeKind::U32 &&
               kind != TypeKind::Isize && kind != TypeKind::Usize) {
@@ -659,6 +678,8 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
                         "must have an integer type");
             return std::pair{Type(TypeKind::Error), nullptr};
           } else {
+            node->semantic->originalType = constantItem->constantType;
+            node->semantic->adjustedType = constantItem->constantType;
             return {constantItem->constantType, constantItem};
           }
         } else {
@@ -687,6 +708,9 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
         if (auto *constantMember =
                 implScope->lookupConstant(constantPath.pathIdentSegment);
             constantMember) {
+          pathSemantic->bindingSymbol = constantMember;
+          pathSemantic->originalType = constantMember->constantType;
+          pathSemantic->adjustedType = constantMember->constantType;
           if (auto &kind = constantMember->constantType.kind;
               kind != TypeKind::I32 && kind != TypeKind::U32 &&
               kind != TypeKind::Isize && kind != TypeKind::Usize) {
@@ -695,6 +719,8 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
                         "must have an integer type");
             return {Type(TypeKind::Error), nullptr};
           } else {
+            node->semantic->originalType = constantMember->constantType;
+            node->semantic->adjustedType = constantMember->constantType;
             return {constantMember->constantType, constantMember};
           }
         } else {
@@ -714,6 +740,9 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
                     structItem->structSymbols[constantPath.pathIdentSegment]
                         .get());
                 constantAssociated) {
+              pathSemantic->bindingSymbol = constantAssociated;
+              pathSemantic->originalType = constantAssociated->constantType;
+              pathSemantic->adjustedType = constantAssociated->constantType;
               if (auto &kind = constantAssociated->constantType.kind;
                   kind != TypeKind::I32 && kind != TypeKind::U32 &&
                   kind != TypeKind::Isize && kind != TypeKind::Usize) {
@@ -722,6 +751,8 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
                             "must have an integer type");
                 return {Type(TypeKind::Error), nullptr};
               } else {
+                node->semantic->originalType = constantAssociated->constantType;
+                node->semantic->adjustedType = constantAssociated->constantType;
                 return {constantAssociated->constantType, constantAssociated};
               }
             } else {
@@ -753,15 +784,19 @@ auto SemanticAnalyzer::analyzeMagnitudeExpr(MagnitudeExprNode *node)
 
 auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
     -> std::pair<Type, ConstantSymbol *> {
+  node->semantic = std::make_unique<ExprSemantic>();
   if (node->isNegative) {
     auto magPair = analyzeMagnitudeExpr(
         std::get<std::unique_ptr<MagnitudeExprNode>>(node->constValue).get());
     auto &magType = magPair.first;
+    node->semantic->originalType = magType;
+    node->semantic->adjustedType = magType;
     if (magType.kind == TypeKind::U32 || magType.kind == TypeKind::Usize) {
       error.occur(
           node->pos,
           "Invalid Constant Value: unary `-` requires a signed integer, "
           "not `u32` or `usize`");
+      node->semantic->adjustedType = Type(TypeKind::Error);
       return {Type(TypeKind::Error), nullptr};
     } else {
       return magPair;
@@ -770,17 +805,24 @@ auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
                  node->constValue)) {
     auto *literalPtr =
         std::get<std::unique_ptr<LiteralExprNode>>(node->constValue).get();
-    if (literalPtr->literalValue == "true" ||
-        literalPtr->literalValue == "false") {
-      return {Type(TypeKind::Bool), nullptr};
-    } else {
-      return {parseIntegerLiteral(node->pos, literalPtr->literalValue, &error,
-                                  false, expected),
-              nullptr};
+    Type type(TypeKind::Bool);
+    if (literalPtr->literalValue != "true" &&
+        literalPtr->literalValue != "false") {
+      type = parseIntegerLiteral(node->pos, literalPtr->literalValue, false,
+                                 expected);
     }
+    literalPtr->semantic = std::make_unique<ExprSemantic>();
+    literalPtr->semantic->originalType = type;
+    literalPtr->semantic->adjustedType = type;
+    node->semantic->originalType = type;
+    node->semantic->adjustedType = type;
+    return {type, nullptr};
   } else {
     auto *pathInExpr =
         std::get<std::unique_ptr<PathInExprNode>>(node->constValue).get();
+    pathInExpr->semantic = std::make_unique<ValuePathInExprSemantic>();
+    auto *pathSemantic =
+        static_cast<ValuePathInExprSemantic *>(pathInExpr->semantic.get());
     if (pathInExpr->path.segments.size() != 1 &&
         pathInExpr->path.segments.size() != 2) {
       error.occur(pathInExpr->pos,
@@ -790,10 +832,10 @@ auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
     }
     for (std::size_t i = 0; i < pathInExpr->path.segments.size(); ++i) {
       const auto &segment = pathInExpr->path.segments[i];
-      const bool isStructQualifier =
-          pathInExpr->path.segments.size() == 2 && i == 0 &&
-          segment.pathIdentSegment != "Self" &&
-          segment.pathIdentSegment != "self";
+      const bool isStructQualifier = pathInExpr->path.segments.size() == 2 &&
+                                     i == 0 &&
+                                     segment.pathIdentSegment != "Self" &&
+                                     segment.pathIdentSegment != "self";
       if (!segment.args.genericArgs.empty() ||
           (segment.args.hasLifeTime && !isStructQualifier)) {
         error.occur(pathInExpr->pos,
@@ -814,6 +856,11 @@ auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
         if (auto *constantItem =
                 globalScopeVisitor->lookupConstant(seg.pathIdentSegment);
             constantItem) {
+          pathSemantic->bindingSymbol = constantItem;
+          pathSemantic->originalType = constantItem->constantType;
+          pathSemantic->adjustedType = constantItem->constantType;
+          node->semantic->originalType = constantItem->constantType;
+          node->semantic->adjustedType = constantItem->constantType;
           return {constantItem->constantType, constantItem};
         } else {
           error.occur(pathInExpr->pos,
@@ -841,6 +888,11 @@ auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
         if (auto *constantMember =
                 implScope->lookupConstant(constantPath.pathIdentSegment);
             constantMember) {
+          pathSemantic->bindingSymbol = constantMember;
+          pathSemantic->originalType = constantMember->constantType;
+          pathSemantic->adjustedType = constantMember->constantType;
+          node->semantic->originalType = constantMember->constantType;
+          node->semantic->adjustedType = constantMember->constantType;
           return {constantMember->constantType, constantMember};
         } else {
           error.occur(
@@ -859,6 +911,11 @@ auto SemanticAnalyzer::analyzeConstExpr(ConstExprNode *node, Type *expected)
                     structItem->structSymbols[constantPath.pathIdentSegment]
                         .get());
                 constantAssociated) {
+              pathSemantic->bindingSymbol = constantAssociated;
+              pathSemantic->originalType = constantAssociated->constantType;
+              pathSemantic->adjustedType = constantAssociated->constantType;
+              node->semantic->originalType = constantAssociated->constantType;
+              node->semantic->adjustedType = constantAssociated->constantType;
               return {constantAssociated->constantType, constantAssociated};
             } else {
               error.occur(pathInExpr->pos,
@@ -1177,9 +1234,10 @@ void SemanticAnalyzer::checkConstant() {
     if (isIntegerType(type) || type.kind == TypeKind::Bool) {
       return true;
     }
-    error.occur(constant->node->constType->pos,
-                "Invalid Constant: `" + constant->name +
-                    "` must have type `i32`, `u32`, `isize`, `usize`, or `bool`");
+    error.occur(
+        constant->node->constType->pos,
+        "Invalid Constant: `" + constant->name +
+            "` must have type `i32`, `u32`, `isize`, `usize`, or `bool`");
     type = Type(TypeKind::Error, type.pos);
     return false;
   };
@@ -1215,17 +1273,20 @@ std::any SemanticAnalyzer::visitConstExpr(ConstExprNode *node) {
   if (lengthType.kind != TypeKind::Usize) {
     error.occur(node->pos,
                 "Invalid Array Length: the length must have type `usize`");
+    node->semantic->adjustedType = Type(TypeKind::Error);
     return std::pair<Type, long long>(Type(TypeKind::Error), 0);
   } else {
     if (std::holds_alternative<std::unique_ptr<LiteralExprNode>>(
             node->constValue)) {
       auto *literal =
           std::get<std::unique_ptr<LiteralExprNode>>(node->constValue).get();
-      return std::pair<Type, long long>(
-          Type(TypeKind::Usize), parseIntegerLiteral(literal->literalValue));
+      auto length = parseIntegerLiteral(literal->literalValue);
+      node->semantic = std::make_unique<ConstExprSemantic>(length);
+      return std::pair<Type, long long>(Type(TypeKind::Usize), length);
     } else {
-      return std::pair<Type, long long>(
-          Type(TypeKind::Usize), std::get<long long>(dependency->value.value));
+      auto length = std::get<long long>(dependency->value.value);
+      node->semantic = std::make_unique<ConstExprSemantic>(length);
+      return std::pair<Type, long long>(Type(TypeKind::Usize), length);
     }
   }
 }
@@ -1288,13 +1349,21 @@ void SemanticAnalyzer::preprocessArrayLengths() {
 
 auto SemanticAnalyzer::analyzeLiteralExpr(LiteralExprNode *node, Type *expected,
                                           bool isNegative) -> ExprInfo {
+  ExprInfo exprInfo;
   if (node->literalValue == "true" || node->literalValue == "false") {
-    return ExprInfo{Type(TypeKind::Bool), false};
+    exprInfo = ExprInfo{Type(TypeKind::Bool), false};
+    node->semantic =
+        std::make_unique<LiteralExprSemantic>(node->literalValue == "true");
   } else {
-    return ExprInfo{parseIntegerLiteral(node->pos, node->literalValue, &error,
-                                        isNegative, expected),
-                    false};
+    exprInfo = ExprInfo{parseIntegerLiteral(node->pos, node->literalValue,
+                                            isNegative, expected),
+                        false};
+    if (exprInfo.type.kind != TypeKind::Error) {
+      node->semantic = std::make_unique<LiteralExprSemantic>(
+          parseIntegerLiteral(node->literalValue), exprInfo.type);
+    }
   }
+  return exprInfo;
 }
 
 std::optional<std::string> SemanticAnalyzer::getSelfName() {
@@ -1305,6 +1374,18 @@ std::optional<std::string> SemanticAnalyzer::getSelfName() {
 }
 
 std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
+  // Invalid paths keep an error semantic; successful lookup selects its kind.
+  node->semantic = std::make_unique<ExprSemantic>();
+  const auto bindFunction = [&](FunctionSymbol *function) {
+    auto semantic = std::make_unique<FunctionPathInExprSemantic>();
+    semantic->functionSymbol = function;
+    node->semantic = std::move(semantic);
+  };
+  const auto bindValue = [&](auto *symbol) {
+    auto semantic = std::make_unique<ValuePathInExprSemantic>();
+    semantic->bindingSymbol = symbol;
+    node->semantic = std::move(semantic);
+  };
   const auto &segments = node->path.segments;
   if (segments.empty()) {
     error.occur(node->pos,
@@ -1332,6 +1413,7 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
                                    "` does not accept lifetime arguments");
         return ExprInfo{Type(TypeKind::Error), false};
       }
+      bindValue(binding);
       return ExprInfo{binding->varType, false, true, binding->isMut};
     }
     if (auto *constant =
@@ -1342,13 +1424,23 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
                                    "` does not accept lifetime arguments");
         return ExprInfo{Type(TypeKind::Error), false};
       }
+      bindValue(constant);
       return ExprInfo{constant->constantType, false, false};
     }
-    if (auto *function =
-            globalScopeVisitor->lookupFunction(seg.pathIdentSegment)) {
+    auto *function = globalScopeVisitor->lookupFunction(seg.pathIdentSegment);
+    // Only source-visible built-ins participate in unqualified lookup;
+    // synthesized container and clone functions remain internal.
+    if (!function && !BuiltInNames::checkValueName(seg.pathIdentSegment)) {
+      if (auto iterator = builtinFunctions.find(seg.pathIdentSegment);
+          iterator != builtinFunctions.end()) {
+        function = iterator->second.get();
+      }
+    }
+    if (function) {
       // A function path may carry lifetimes; they do not affect its value.
       Type type(TypeKind::Function);
       type.functionSymbol = function;
+      bindFunction(function);
       return ExprInfo{type, false, false};
     }
     error.occur(node->pos,
@@ -1388,6 +1480,7 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
                       "` has no associated item named `" + methodName + "`");
       return ExprInfo{Type(TypeKind::Error), false};
     }
+    bindFunction(function);
     return ExprInfo{function->functionalType, false};
   }
 
@@ -1418,6 +1511,7 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
       return ExprInfo{Type(TypeKind::Error), false};
     }
     auto *function = getOrCreateBuiltinClone(Type(kind, node->pos));
+    bindFunction(function);
     return ExprInfo{function->functionalType, false};
   };
   if (typeSeg.pathIdentSegment == "i32") {
@@ -1465,6 +1559,7 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
     if (nameSeg.pathIdentSegment == "clone") {
       auto *function = getOrCreateBuiltinClone(Type(structName.value()));
       if (function) {
+        bindFunction(function);
         return ExprInfo{function->functionalType, false};
       }
       error.occur(node->pos, "Invalid Path: the struct has no Clone trait");
@@ -1480,6 +1575,7 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
     // A function path may carry lifetimes; they do not affect its value.
     Type type(TypeKind::Function);
     type.functionSymbol = function;
+    bindFunction(function);
     return ExprInfo{type, false, false};
   }
   if (auto *constant = dynamic_cast<ConstantSymbol *>(itemSymbol)) {
@@ -1489,6 +1585,7 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
                                  "` does not accept lifetime arguments");
       return ExprInfo{Type(TypeKind::Error), false};
     }
+    bindValue(constant);
     return ExprInfo{constant->constantType, false, false};
   }
   error.occur(node->pos,
@@ -1497,7 +1594,10 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
   return ExprInfo{Type(TypeKind::Error), false};
 }
 std::any SemanticAnalyzer::visitAccessExpr(AccessExprNode *node) {
-  auto structInfo = std::any_cast<ExprInfo>(node->accessObject->accept(this));
+  node->semantic = std::make_unique<AccessExprSemantic>();
+  auto *accessSemantic =
+      static_cast<AccessExprSemantic *>(node->semantic.get());
+  auto structInfo = analyzeExpr(node->accessObject.get());
   if (structInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -1508,8 +1608,9 @@ std::any SemanticAnalyzer::visitAccessExpr(AccessExprNode *node) {
   }
   bool isMutablePlace = structInfo.isMutablePlace;
   bool mutationBlocked = structInfo.mutationBlocked;
-  auto innerType =
-      autoDereference(&structInfo.type, isMutablePlace, mutationBlocked);
+  std::vector<Adjustment> adjusts;
+  auto innerType = autoDereference(&structInfo.type, isMutablePlace,
+                                   mutationBlocked, adjusts);
   if (innerType.kind != TypeKind::Struct) {
     error.occur(node->accessObject->pos,
                 "Invalid Access: field access requires a struct value");
@@ -1522,21 +1623,34 @@ std::any SemanticAnalyzer::visitAccessExpr(AccessExprNode *node) {
                 "Invalid Access: the target struct type is not defined");
     return ExprInfo{Type(TypeKind::Error), false};
   } else {
-    auto iterator = structSymbol->structFields.find(node->identifier);
-    if (iterator == structSymbol->structFields.end()) {
+    bool found = false;
+    for (auto it = structSymbol->layoutFields.begin();
+         it != structSymbol->layoutFields.end(); ++it) {
+      if (*it == node->identifier) {
+        accessSemantic->object = structSymbol;
+        accessSemantic->index = it - structSymbol->layoutFields.begin();
+        node->accessObject->semantic->adjustments = std::move(adjusts);
+        node->accessObject->semantic->adjustedType = innerType;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       error.occur(node->pos,
                   "Invalid Access: struct `" + innerType.structName.value() +
                       "` has no field named `" + node->identifier + "`");
       return ExprInfo{Type(TypeKind::Error), false};
     }
-    Type field = iterator->second;
+    const auto &field = structSymbol->structFields.at(node->identifier);
     return ExprInfo{field, structInfo.isDiverge, true, isMutablePlace,
                     mutationBlocked};
   }
 }
 
 std::any SemanticAnalyzer::visitCallExpr(CallExprNode *node) {
-  auto functionInfo = std::any_cast<ExprInfo>(node->callee->accept(this));
+  node->semantic = std::make_unique<CallExprSemantic>();
+  auto *calleeSemantic = static_cast<CallExprSemantic *>(node->semantic.get());
+  auto functionInfo = analyzeExpr(node->callee.get());
   if (functionInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -1546,7 +1660,8 @@ std::any SemanticAnalyzer::visitCallExpr(CallExprNode *node) {
                 "must have a function type");
     return ExprInfo{Type(TypeKind::Error), false};
   }
-  auto *functionSymbol = functionInfo.type.functionSymbol.value();
+  calleeSemantic->calleeSymbol = functionInfo.type.functionSymbol.value();
+  auto &functionSymbol = calleeSemantic->calleeSymbol;
   // check the params type
   if (functionSymbol->paramTypes.size() != node->callParams.size()) {
     error.occur(node->callee->pos, "Invalid Expression: the size of the "
@@ -1588,7 +1703,7 @@ std::any SemanticAnalyzer::visitUnaryExpr(UnaryExprNode *node) {
         return ExprInfo{Type(TypeKind::Error), false};
       }
     } else {
-      auto exprInfo = std::any_cast<ExprInfo>(node->childExpr->accept(this));
+      auto exprInfo = analyzeExpr(node->childExpr.get());
       if (exprInfo.type.kind == TypeKind::Error) {
         return ExprInfo{Type(TypeKind::Error), false};
       }
@@ -1599,6 +1714,9 @@ std::any SemanticAnalyzer::visitUnaryExpr(UnaryExprNode *node) {
         }
         if (innerType->kind == TypeKind::I32 ||
             innerType->kind == TypeKind::Isize) {
+          node->childExpr->semantic->adjustments.emplace_back(
+              Adjustment{AdjustmentKind::Deref, *innerType});
+          node->childExpr->semantic->adjustedType = *innerType;
           return ExprInfo{*innerType, exprInfo.isDiverge, false};
         } else {
           error.occur(node->childExpr->pos,
@@ -1617,7 +1735,7 @@ std::any SemanticAnalyzer::visitUnaryExpr(UnaryExprNode *node) {
       }
     }
   } else {
-    auto exprInfo = std::any_cast<ExprInfo>(node->childExpr->accept(this));
+    auto exprInfo = analyzeExpr(node->childExpr.get());
     if (exprInfo.type.kind == TypeKind::Error) {
       return ExprInfo{Type(TypeKind::Error), false};
     }
@@ -1628,6 +1746,9 @@ std::any SemanticAnalyzer::visitUnaryExpr(UnaryExprNode *node) {
       }
       if (innerType->kind >= TypeKind::I32 &&
           innerType->kind <= TypeKind::Bool) {
+        node->childExpr->semantic->adjustments.emplace_back(
+            Adjustment{AdjustmentKind::Deref, *innerType});
+        node->childExpr->semantic->adjustedType = *innerType;
         return ExprInfo{*innerType, exprInfo.isDiverge, false};
       } else {
         error.occur(node->childExpr->pos,
@@ -1648,7 +1769,7 @@ std::any SemanticAnalyzer::visitUnaryExpr(UnaryExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitCastExpr(CastExprNode *node) {
-  auto childExprInfo = std::any_cast<ExprInfo>(node->castValue->accept(this));
+  auto childExprInfo = analyzeExpr(node->castValue.get());
   if (childExprInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -1663,10 +1784,22 @@ std::any SemanticAnalyzer::visitCastExpr(CastExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitBinaryExpr(BinaryExprNode *node) {
-  auto leftExprInfo =
-      std::any_cast<ExprInfo>(node->leftChildExpr->accept(this));
-  auto rightExprInfo =
-      std::any_cast<ExprInfo>(node->rightChildExpr->accept(this));
+  auto leftExprInfo = analyzeExpr(node->leftChildExpr.get());
+  auto rightExprInfo = analyzeExpr(node->rightChildExpr.get());
+  auto recordAdjustment = [&] {
+    if (leftExprInfo.type.kind == TypeKind::ImmutReference) {
+      const auto &target = *leftExprInfo.type.elementType;
+      node->leftChildExpr->semantic->adjustments.emplace_back(
+          Adjustment{AdjustmentKind::Deref, target});
+      node->leftChildExpr->semantic->adjustedType = target;
+    }
+    if (rightExprInfo.type.kind == TypeKind::ImmutReference) {
+      const auto &target = *rightExprInfo.type.elementType;
+      node->rightChildExpr->semantic->adjustments.emplace_back(
+          Adjustment{AdjustmentKind::Deref, target});
+      node->rightChildExpr->semantic->adjustedType = target;
+    }
+  };
   if (leftExprInfo.type.kind == TypeKind::Error ||
       rightExprInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
@@ -1681,6 +1814,7 @@ std::any SemanticAnalyzer::visitBinaryExpr(BinaryExprNode *node) {
   if (node->op >= BinaryOperator::Add && node->op <= BinaryOperator::Mod) {
     if (leftTypeKind == rightTypeKind &&
         (leftTypeKind >= TypeKind::I32 && leftTypeKind <= TypeKind::Usize)) {
+      recordAdjustment();
       return ExprInfo{Type(leftTypeKind), isDiverge, false};
     } else {
       error.occur(node->pos, "Invalid Operation: arithmetic operands must have "
@@ -1692,6 +1826,7 @@ std::any SemanticAnalyzer::visitBinaryExpr(BinaryExprNode *node) {
              node->op <= BinaryOperator::BitXor) {
     if (leftTypeKind == rightTypeKind &&
         (leftTypeKind >= TypeKind::I32 && leftTypeKind <= TypeKind::Bool)) {
+      recordAdjustment();
       return ExprInfo{Type(leftTypeKind), isDiverge, false};
     } else {
       error.occur(node->pos,
@@ -1702,6 +1837,7 @@ std::any SemanticAnalyzer::visitBinaryExpr(BinaryExprNode *node) {
   } else {
     if ((leftTypeKind >= TypeKind::I32 && leftTypeKind <= TypeKind::Usize) &&
         (rightTypeKind >= TypeKind::I32 && rightTypeKind <= TypeKind::Usize)) {
+      recordAdjustment();
       return ExprInfo{Type(leftTypeKind), isDiverge, false};
     } else {
       error.occur(node->pos, "Invalid Operation: shift operands must be "
@@ -1713,10 +1849,8 @@ std::any SemanticAnalyzer::visitBinaryExpr(BinaryExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitLogicExpr(LogicExprNode *node) {
-  auto leftExprInfo =
-      std::any_cast<ExprInfo>(node->leftChildExpr->accept(this));
-  auto rightExprInfo =
-      std::any_cast<ExprInfo>(node->rightChildExpr->accept(this));
+  auto leftExprInfo = analyzeExpr(node->leftChildExpr.get());
+  auto rightExprInfo = analyzeExpr(node->rightChildExpr.get());
   if (leftExprInfo.type.kind == TypeKind::Error ||
       rightExprInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
@@ -1733,6 +1867,15 @@ std::any SemanticAnalyzer::visitLogicExpr(LogicExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitLetStmt(LetStmtNode *node) {
+  node->semantic = std::make_unique<StmtSemantic>();
+  node->semantic->isLet = true;
+  auto defineLocalBinding = [&](const LocalSymbol &symbol) {
+    auto localBindingPtr = std::make_unique<LocalSymbol>(symbol);
+    localBindings.emplace_back(std::move(localBindingPtr));
+    node->semantic->statementType = symbol.varType;
+    node->semantic->bindingSymbol = localBindings.back().get();
+    currentScope->define(node->identifier, *localBindings.back());
+  };
   if (node->type) {
     auto expectedType = std::any_cast<Type>(node->type.value()->accept(this));
     if (expectedType.kind == TypeKind::Error) {
@@ -1741,22 +1884,25 @@ std::any SemanticAnalyzer::visitLetStmt(LetStmtNode *node) {
                       node->identifier + "` is invalid");
     }
     auto actualInfo = checkExpr(node->value.get(), &expectedType);
+
     LocalSymbol letSymbol(node->pos, node->identifier, node->isMut,
                           actualInfo.type);
-    currentScope->define(node->identifier, letSymbol);
+    defineLocalBinding(letSymbol);
+    node->semantic->isDiverge = actualInfo.isDiverge;
     return StmtInfo{actualInfo.isDiverge};
   } else {
     ExprInfo initializer = checkExpr(node->value.get(), nullptr);
     LocalSymbol letSymbol(node->pos, node->identifier, node->isMut,
                           initializer.type);
-    currentScope->define(node->identifier, letSymbol);
+    defineLocalBinding(letSymbol);
+    node->semantic->isDiverge = initializer.isDiverge;
     return StmtInfo{initializer.isDiverge};
   }
 }
 
 auto SemanticAnalyzer::analyzeBlockExpr(BlockExprNode *node, Type *expected)
     -> ExprInfo {
-  ScopeGuard guard(currentScope);
+  auto _ = ScopeGuard(currentScope);
   bool isDiverge = false;
   for (auto &childStmt : node->statements) {
     isDiverge |= std::any_cast<StmtInfo>(childStmt->accept(this)).isDiverge;
@@ -1784,7 +1930,7 @@ std::any SemanticAnalyzer::visitBlockExpr(BlockExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitExpressionStmt(ExpressionStmtNode *node) {
-  auto exprInfo = std::any_cast<ExprInfo>(node->expr->accept(this));
+  auto exprInfo = analyzeExpr(node->expr.get());
   if (exprInfo.type.kind != TypeKind::Error && !node->hasSemicolon &&
       dynamic_cast<ExprWithBlockNode *>(node->expr.get())) {
     if (exprInfo.type.kind != TypeKind::Unit &&
@@ -1799,19 +1945,17 @@ std::any SemanticAnalyzer::visitExpressionStmt(ExpressionStmtNode *node) {
   return StmtInfo{exprInfo.isDiverge};
 }
 
-std::any SemanticAnalyzer::visitEmptyStmt(EmptyStmtNode *node) {
+std::any SemanticAnalyzer::visitEmptyStmt(EmptyStmtNode *) {
   return StmtInfo{false};
 }
 
-std::any SemanticAnalyzer::visitUnitExpr(UnitExprNode *node) {
+std::any SemanticAnalyzer::visitUnitExpr(UnitExprNode *) {
   return ExprInfo{Type(TypeKind::Unit), false};
 }
 
 std::any SemanticAnalyzer::visitComparisonExpr(ComparisonExprNode *node) {
-  auto leftExprInfo =
-      std::any_cast<ExprInfo>(node->leftChildExpr->accept(this));
-  auto rightExprInfo =
-      std::any_cast<ExprInfo>(node->rightChildExpr->accept(this));
+  auto leftExprInfo = analyzeExpr(node->leftChildExpr.get());
+  auto rightExprInfo = analyzeExpr(node->rightChildExpr.get());
   if (leftExprInfo.type.kind == TypeKind::Error ||
       rightExprInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
@@ -1859,11 +2003,16 @@ std::any SemanticAnalyzer::visitComparisonExpr(ComparisonExprNode *node) {
                 "and right &mut T allow an outer reference adjustment");
     return ExprInfo{Type(TypeKind::Error), false};
   }
+  if (leftExprInfo.type != rightExprInfo.type) {
+    node->rightChildExpr->semantic->adjustments.emplace_back(
+        Adjustment{AdjustmentKind::MutToShared, leftExprInfo.type});
+    node->rightChildExpr->semantic->adjustedType = leftExprInfo.type;
+  }
   return ExprInfo{Type(TypeKind::Bool), isDiverge};
 }
 
 std::any SemanticAnalyzer::visitBorrowExpr(BorrowExprNode *node) {
-  auto borrowInfo = std::any_cast<ExprInfo>(node->borrowExpr->accept(this));
+  auto borrowInfo = analyzeExpr(node->borrowExpr.get());
   if (borrowInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -1884,8 +2033,7 @@ std::any SemanticAnalyzer::visitBorrowExpr(BorrowExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitDereferenceExpr(DereferenceExprNode *node) {
-  auto dereferenceInfo =
-      std::any_cast<ExprInfo>(node->dereferenceExpr->accept(this));
+  auto dereferenceInfo = analyzeExpr(node->dereferenceExpr.get());
   if (dereferenceInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -1927,7 +2075,7 @@ std::any SemanticAnalyzer::visitDereferenceExpr(DereferenceExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
-  auto lhsInfo = std::any_cast<ExprInfo>(node->leftChildExpr->accept(this));
+  auto lhsInfo = analyzeExpr(node->leftChildExpr.get());
   if (lhsInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -1944,7 +2092,13 @@ std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
                 "the assignment destination must allow mutation");
     return ExprInfo{Type(TypeKind::Error), false};
   }
-
+  auto recordAdjustments = [&](const ExprInfo &rhsInfo, const Type *rhsType) {
+    if (rhsInfo.type.kind == TypeKind::ImmutReference) {
+      node->rightChildExpr->semantic->adjustments.emplace_back(
+          Adjustment{AdjustmentKind::Deref, *rhsType});
+      node->rightChildExpr->semantic->adjustedType = *rhsType;
+    }
+  };
   switch (node->assignmentOp) {
   case AssignmentOperator::Assignment: {
     auto rhsInfo = checkExpr(node->rightChildExpr.get(), &lhsInfo.type);
@@ -1965,7 +2119,7 @@ std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
                   "assignment must have an integer type");
       return ExprInfo{Type(TypeKind::Error), false};
     }
-    auto rhsInfo = std::any_cast<ExprInfo>(node->rightChildExpr->accept(this));
+    auto rhsInfo = analyzeExpr(node->rightChildExpr.get());
     if (rhsInfo.type.kind == TypeKind::Error) {
       return ExprInfo{Type(TypeKind::Error), false};
     }
@@ -1987,6 +2141,7 @@ std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
                   "or be a shared reference to that type");
       return ExprInfo{Type(TypeKind::Error), false};
     }
+    recordAdjustments(rhsInfo, rhsType);
     return ExprInfo{Type(TypeKind::Unit),
                     lhsInfo.isDiverge || rhsInfo.isDiverge};
   }
@@ -1999,7 +2154,7 @@ std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
                   "assignment must have an integer or bool type");
       return ExprInfo{Type(TypeKind::Error), false};
     }
-    auto rhsInfo = std::any_cast<ExprInfo>(node->rightChildExpr->accept(this));
+    auto rhsInfo = analyzeExpr(node->rightChildExpr.get());
     if (rhsInfo.type.kind == TypeKind::Error) {
       return ExprInfo{Type(TypeKind::Error), false};
     }
@@ -2021,6 +2176,7 @@ std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
                   "or be a shared reference to that type");
       return ExprInfo{Type(TypeKind::Error), false};
     }
+    recordAdjustments(rhsInfo, rhsType);
     return ExprInfo{Type(TypeKind::Unit),
                     lhsInfo.isDiverge || rhsInfo.isDiverge};
   }
@@ -2032,7 +2188,7 @@ std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
                   "assignment must have an integer type");
       return ExprInfo{Type(TypeKind::Error), false};
     }
-    auto rhsInfo = std::any_cast<ExprInfo>(node->rightChildExpr->accept(this));
+    auto rhsInfo = analyzeExpr(node->rightChildExpr.get());
     if (rhsInfo.type.kind == TypeKind::Error) {
       return ExprInfo{Type(TypeKind::Error), false};
     }
@@ -2054,6 +2210,7 @@ std::any SemanticAnalyzer::visitAssignmentExpr(AssignmentExprNode *node) {
                   "reference to an integer; the integer types may differ");
       return ExprInfo{Type(TypeKind::Error), false};
     }
+    recordAdjustments(rhsInfo, rhsType);
     return ExprInfo{Type(TypeKind::Unit),
                     lhsInfo.isDiverge || rhsInfo.isDiverge};
   }
@@ -2066,7 +2223,7 @@ std::any SemanticAnalyzer::visitArrayExpr(ArrayExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitIndexExpr(IndexExprNode *node) {
-  auto baseInfo = std::any_cast<ExprInfo>(node->arrayExpr->accept(this));
+  auto baseInfo = analyzeExpr(node->arrayExpr.get());
   if (baseInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -2077,8 +2234,9 @@ std::any SemanticAnalyzer::visitIndexExpr(IndexExprNode *node) {
   }
   bool isMutablePlace = baseInfo.isMutablePlace;
   bool mutationBlocked = baseInfo.mutationBlocked;
+  std::vector<Adjustment> adjusts;
   auto innerType =
-      autoDereference(&baseInfo.type, isMutablePlace, mutationBlocked);
+      autoDereference(&baseInfo.type, isMutablePlace, mutationBlocked, adjusts);
   if (innerType.kind != TypeKind::Array && innerType.kind != TypeKind::Vec) {
     error.occur(node->arrayExpr->pos,
                 "Invalid Expression: the base must be an array or Vec");
@@ -2094,6 +2252,8 @@ std::any SemanticAnalyzer::visitIndexExpr(IndexExprNode *node) {
   if (innerType.kind == TypeKind::Vec && !isMutablePlace) {
     mutationBlocked = true;
   }
+  node->arrayExpr->semantic->adjustments = std::move(adjusts);
+  node->arrayExpr->semantic->adjustedType = innerType;
   return ExprInfo{*innerType.elementType,
                   baseInfo.isDiverge || indexInfo.isDiverge, true,
                   isMutablePlace, mutationBlocked};
@@ -2101,6 +2261,9 @@ std::any SemanticAnalyzer::visitIndexExpr(IndexExprNode *node) {
 
 std::any SemanticAnalyzer::visitStructExpr(StructExprNode *node) {
   auto *pathPtr = node->path.get();
+  pathPtr->semantic = std::make_unique<StructPathInExprSemantic>();
+  auto *pathSemantic =
+      static_cast<StructPathInExprSemantic *>(pathPtr->semantic.get());
   if (pathPtr->path.segments.size() != 1) {
     error.occur(pathPtr->pos, "Invalid Expression: a struct constructor path "
                               "must contain a single segment");
@@ -2130,6 +2293,9 @@ std::any SemanticAnalyzer::visitStructExpr(StructExprNode *node) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
   if (auto *structSymbol = globalScopeVisitor->lookupStruct(typeName)) {
+    pathSemantic->structSymbol = structSymbol;
+    pathSemantic->originalType = Type(typeName);
+    pathSemantic->adjustedType = pathSemantic->originalType;
     if (node->structExprFields.size() != structSymbol->structFields.size()) {
       error.occur(pathPtr->pos,
                   "Invalid Expression: constructor for struct `" + typeName +
@@ -2210,13 +2376,16 @@ SemanticAnalyzer::generatePossibleQueue(const Type *calleeType, bool isMutable,
 }
 
 std::any SemanticAnalyzer::visitMethodCallExpr(MethodCallExprNode *node) {
+  node->semantic = std::make_unique<MethodCallExprSemantic>();
+  auto *methodSemantic =
+      static_cast<MethodCallExprSemantic *>(node->semantic.get());
   if (!node->callMethod.args.genericArgs.empty()) {
     error.occur(
         node->pos,
         "Invalid Expression: cannot accept a type argument in a method");
     return ExprInfo{Type(TypeKind::Error), false};
   }
-  auto calleeInfo = std::any_cast<ExprInfo>(node->callee->accept(this));
+  auto calleeInfo = analyzeExpr(node->callee.get());
   if (calleeInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -2242,36 +2411,32 @@ std::any SemanticAnalyzer::visitMethodCallExpr(MethodCallExprNode *node) {
   };
   auto defineFinalState = [&](const Type &finalType,
                               const ReceiverContext &ctx) {
-    if (finalType.kind != TypeKind::ImmutReference &&
-        finalType.kind != TypeKind::MutReference) {
-      finalBlocked = ctx.isBlocked;
-      finalMutable = ctx.isMutable;
-    } else {
-      finalBlocked =
-          ctx.isBlocked || finalType.kind == TypeKind::ImmutReference;
-      if (finalType.kind == TypeKind::MutReference) {
-        finalMutable =
-            (ctx.kind == ReceiverKind::Value ? true : ctx.isMutable) &&
-            !finalBlocked;
-      } else {
-        finalMutable = ctx.isMutable && !finalBlocked;
-      }
-    }
+    finalBlocked = ctx.isBlocked;
+    finalMutable =
+        !finalBlocked &&
+        (ctx.isMutable || (ctx.kind == ReceiverKind::Value &&
+                           finalType.kind == TypeKind::MutReference));
   };
-
+  std::vector<Adjustment> adjusts;
   for (auto &ctx : possibleQueue) {
+    adjusts.clear();
+    adjusts.reserve(ctx.dereferenceTimes);
     auto *possibleTypePtr = &calleeInfo.type;
     for (std::size_t times = 0; times < ctx.dereferenceTimes; ++times) {
+      adjusts.emplace_back(
+          Adjustment{AdjustmentKind::Deref, *possibleTypePtr->elementType});
       possibleTypePtr = possibleTypePtr->elementType.get();
     }
     auto possibleType = *possibleTypePtr;
     if (ctx.kind == ReceiverKind::Shared) {
       possibleType = Type(TypeKind::ImmutReference);
       possibleType.elementType = std::make_unique<Type>(*possibleTypePtr);
+      adjusts.emplace_back(Adjustment{AdjustmentKind::Borrow, possibleType});
     }
     if (ctx.kind == ReceiverKind::Mutable) {
       possibleType = Type(TypeKind::MutReference);
       possibleType.elementType = std::make_unique<Type>(*possibleTypePtr);
+      adjusts.emplace_back(Adjustment{AdjustmentKind::Borrow, possibleType});
     }
     if (possibleType.kind != TypeKind::ImmutReference &&
         possibleType.kind != TypeKind::MutReference) {
@@ -2409,6 +2574,7 @@ std::any SemanticAnalyzer::visitMethodCallExpr(MethodCallExprNode *node) {
     error.occur(node->pos, "Invalid Expression: method cannot access");
     return ExprInfo{Type(TypeKind::Error), false};
   }
+  methodSemantic->calleeSymbol = finalFunc;
   // check the params type
   if (finalFunc->paramTypes.size() != node->callParams.size() + 1) {
     error.occur(node->callee->pos, "Invalid Expression: the size of the "
@@ -2425,6 +2591,7 @@ std::any SemanticAnalyzer::visitMethodCallExpr(MethodCallExprNode *node) {
     }
     isDiverge |= paramInfo.isDiverge;
   }
+  methodSemantic->receiverAdjustments = std::move(adjusts);
   return ExprInfo{finalFunc->returnType, isDiverge};
 }
 
@@ -2471,7 +2638,7 @@ std::any SemanticAnalyzer::visitBreakExpr(BreakExprNode *node) {
   } else {
     auto &topCtx = loopStack.top();
     if (topCtx.kind == LoopKind::While) {
-      if (node->loopValue) {
+      if (node->hasExplicitValue) {
         error.occur(node->pos,
                     "Invalid Expression: `break` targeting a `while` loop "
                     "cannot carry a value; use `break;`");
@@ -2483,15 +2650,11 @@ std::any SemanticAnalyzer::visitBreakExpr(BreakExprNode *node) {
                     "from within that loop's condition");
         return ExprInfo{Type(TypeKind::Error), false};
       }
+      checkExpr(node->loopValue.get(), nullptr);
     } else {
-      if (node->loopValue) {
-        topCtx.breakValues.emplace_back(
-            checkExpr(node->loopValue.value().get(), topCtx.expected));
-      } else {
-        auto breakNode = std::make_unique<UnitExprNode>(node->pos);
-        topCtx.breakValues.emplace_back(
-            checkExpr(breakNode.get(), topCtx.expected));
-      }
+      topCtx.breakInfos.emplace_back(
+          checkExpr(node->loopValue.get(), topCtx.expected));
+      topCtx.breakNodes.push_back(node);
     }
   }
   return ExprInfo{Type(TypeKind::Never), true};
@@ -2506,7 +2669,7 @@ std::any SemanticAnalyzer::visitInfiniteLoopExpr(InfiniteLoopExprNode *node) {
 }
 
 std::any SemanticAnalyzer::visitPredicateLoopExpr(PredicateLoopExprNode *node) {
-  LoopGuard guard(loopStack, LoopContext(LoopKind::While));
+  auto _ = LoopGuard(loopStack, LoopContext(LoopKind::While));
   Type boolType(TypeKind::Bool);
   loopStack.top().checkingCondition = true;
   auto conditionInfo = checkExpr(node->conditions.get(), &boolType);
@@ -2625,6 +2788,89 @@ bool SemanticAnalyzer::checkCoercionEnability(const Type &from,
   return false;
 }
 
+bool SemanticAnalyzer::checkCoercionEnability(const Type &from, const Type &to,
+                                              std::vector<Adjustment> &adjust) {
+  if (from == to) {
+    return true;
+  }
+  if (from.kind == TypeKind::Never) {
+    adjust.emplace_back(Adjustment{AdjustmentKind::NeverToAny, to});
+    return true;
+  }
+  if (from.kind == TypeKind::MutReference &&
+      to.kind == TypeKind::ImmutReference &&
+      *from.elementType == *to.elementType) {
+    adjust.emplace_back(Adjustment{AdjustmentKind::MutToShared, to});
+    return true;
+  }
+  bool canReachTarget = false;
+  if (to.kind == TypeKind::ImmutReference &&
+      (from.kind == TypeKind::ImmutReference ||
+       from.kind == TypeKind::MutReference)) {
+    const auto *fromCopy = from.elementType.get();
+    adjust.emplace_back(Adjustment{AdjustmentKind::Deref, *fromCopy});
+    do {
+      if (*fromCopy == *to.elementType) {
+        break;
+      }
+      if ((fromCopy->kind == TypeKind::ImmutReference ||
+           fromCopy->kind == TypeKind::MutReference ||
+           fromCopy->kind == TypeKind::Box) &&
+          fromCopy->elementType) {
+        adjust.emplace_back(
+            Adjustment{AdjustmentKind::Deref, *fromCopy->elementType});
+        fromCopy = fromCopy->elementType.get();
+      } else
+        break;
+    } while (fromCopy->kind == TypeKind::ImmutReference ||
+             fromCopy->kind == TypeKind::MutReference ||
+             fromCopy->kind == TypeKind::Box);
+    canReachTarget |= *fromCopy == *to.elementType;
+    if (*fromCopy == *to.elementType) {
+      adjust.emplace_back(Adjustment{AdjustmentKind::Borrow, to});
+      canReachTarget = true;
+    }
+    if (canReachTarget) {
+      return true;
+    } else {
+      adjust.clear();
+    }
+  }
+  bool isShared = false;
+  if (to.kind == TypeKind::MutReference &&
+      from.kind == TypeKind::MutReference) {
+    const auto *fromCopy = from.elementType.get();
+    adjust.emplace_back(Adjustment{AdjustmentKind::Deref, *fromCopy});
+    do {
+      if (*fromCopy == *to.elementType) {
+        break;
+      }
+      if ((fromCopy->kind == TypeKind::ImmutReference ||
+           fromCopy->kind == TypeKind::MutReference ||
+           fromCopy->kind == TypeKind::Box) &&
+          fromCopy->elementType) {
+        isShared |= fromCopy->kind == TypeKind::ImmutReference;
+        adjust.emplace_back(
+            Adjustment{AdjustmentKind::Deref, *fromCopy->elementType});
+        fromCopy = fromCopy->elementType.get();
+      } else
+        break;
+    } while (fromCopy->kind == TypeKind::ImmutReference ||
+             fromCopy->kind == TypeKind::MutReference ||
+             fromCopy->kind == TypeKind::Box);
+    if (*fromCopy == *to.elementType) {
+      adjust.emplace_back(Adjustment{AdjustmentKind::Borrow, to});
+      canReachTarget = true;
+    }
+    if (canReachTarget && !isShared) {
+      return true;
+    } else {
+      adjust.clear();
+    }
+  }
+  return false;
+}
+
 bool SemanticAnalyzer::checkCoercionPermission(const ExprInfo &from,
                                                const Type &to) {
   // we assume that type check has already done
@@ -2710,21 +2956,37 @@ void SemanticAnalyzer::checkItemType() {
 }
 
 ExprInfo SemanticAnalyzer::analyzeExpr(ExprNode *node, Type *expected) {
+  auto saveSemantic = [node](ExprInfo info) {
+    // Keep specialized semantics (bindings, callees and fields) intact.
+    if (!node->semantic) {
+      node->semantic = std::make_unique<ExprSemantic>();
+    }
+    node->semantic->adjustments.clear();
+    node->semantic->originalType = info.type;
+    node->semantic->adjustedType = info.type;
+    node->semantic->isPlace = info.isPlace;
+    node->semantic->isMutablePlace = info.isMutablePlace;
+    node->semantic->isDiverge = info.isDiverge;
+    return info;
+  };
   switch (node->kind) {
   case nodeKind::LiteralExpr:
-    return analyzeLiteralExpr(static_cast<LiteralExprNode *>(node), expected,
-                              false);
+    return saveSemantic(analyzeLiteralExpr(static_cast<LiteralExprNode *>(node),
+                                           expected, false));
   case nodeKind::ArrayExpr:
-    return analyzeArrayExpr(static_cast<ArrayExprNode *>(node), expected);
+    return saveSemantic(
+        analyzeArrayExpr(static_cast<ArrayExprNode *>(node), expected));
   case nodeKind::BlockExpr:
-    return analyzeBlockExpr(static_cast<BlockExprNode *>(node), expected);
+    return saveSemantic(
+        analyzeBlockExpr(static_cast<BlockExprNode *>(node), expected));
   case nodeKind::IfExpr:
-    return analyzeIfExpr(static_cast<IfExprNode *>(node), expected);
+    return saveSemantic(
+        analyzeIfExpr(static_cast<IfExprNode *>(node), expected));
   case nodeKind::InfiniteLoopExpr:
-    return analyzeLoopExpr(static_cast<InfiniteLoopExprNode *>(node), expected);
+    return saveSemantic(
+        analyzeLoopExpr(static_cast<InfiniteLoopExprNode *>(node), expected));
   default:
-    return std::any_cast<ExprInfo>(node->accept(this));
-    break;
+    return saveSemantic(std::any_cast<ExprInfo>(node->accept(this)));
   }
 }
 
@@ -2792,6 +3054,25 @@ auto SemanticAnalyzer::analyzeIfExpr(IfExprNode *node, Type *expected)
         branchTypes.emplace_back(bodyInfo.type);
         branchTypes.emplace_back(elseInfo.type);
         auto mergeType = LeastUpperBoundCoercion(branchTypes);
+        if (mergeType.kind != TypeKind::Error) {
+          std::vector<Adjustment> bodyAdjustments, elseAdjustments;
+          if (!checkCoercionEnability(bodyInfo.type, mergeType,
+                                      bodyAdjustments) ||
+              !checkCoercionPermission(bodyInfo, mergeType) ||
+              !checkCoercionEnability(elseInfo.type, mergeType,
+                                      elseAdjustments) ||
+              !checkCoercionPermission(elseInfo, mergeType)) {
+            error.occur(node->pos,
+                        "Invalid Expression: branches cannot coerce to the "
+                        "common type with the required mutability");
+            return ExprInfo{Type(TypeKind::Error), false};
+          }
+          node->body->semantic->adjustments = std::move(bodyAdjustments);
+          node->body->semantic->adjustedType = mergeType;
+          node->elseExpr.value()->semantic->adjustments =
+              std::move(elseAdjustments);
+          node->elseExpr.value()->semantic->adjustedType = mergeType;
+        }
         return ExprInfo{mergeType, condition.isDiverge || (bodyInfo.isDiverge &&
                                                            elseInfo.isDiverge)};
       } else {
@@ -2805,6 +3086,25 @@ auto SemanticAnalyzer::analyzeIfExpr(IfExprNode *node, Type *expected)
         branchTypes.emplace_back(bodyInfo.type);
         branchTypes.emplace_back(elseIfInfo.type);
         auto mergeType = LeastUpperBoundCoercion(branchTypes);
+        if (mergeType.kind != TypeKind::Error) {
+          std::vector<Adjustment> bodyAdjustments, elseIfAdjustments;
+          if (!checkCoercionEnability(bodyInfo.type, mergeType,
+                                      bodyAdjustments) ||
+              !checkCoercionPermission(bodyInfo, mergeType) ||
+              !checkCoercionEnability(elseIfInfo.type, mergeType,
+                                      elseIfAdjustments) ||
+              !checkCoercionPermission(elseIfInfo, mergeType)) {
+            error.occur(node->pos,
+                        "Invalid Expression: branches cannot coerce to the "
+                        "common type with the required mutability");
+            return ExprInfo{Type(TypeKind::Error), false};
+          }
+          node->body->semantic->adjustments = std::move(bodyAdjustments);
+          node->body->semantic->adjustedType = mergeType;
+          node->elseIfExpr.value()->semantic->adjustments =
+              std::move(elseIfAdjustments);
+          node->elseIfExpr.value()->semantic->adjustedType = mergeType;
+        }
         return ExprInfo{mergeType,
                         condition.isDiverge ||
                             (bodyInfo.isDiverge && elseIfInfo.isDiverge)};
@@ -2834,14 +3134,29 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
           std::get<std::vector<std::unique_ptr<ExprNode>>>(node->arrayEntries);
       std::vector<Type> arrayTypes;
       arrayTypes.reserve(entries.size());
+      std::vector<ExprInfo> arrayInfos;
       for (const auto &childExpr : entries) {
-        auto exprInfo = std::any_cast<ExprInfo>(childExpr->accept(this));
+        arrayInfos.emplace_back(analyzeExpr(childExpr.get()));
+        auto &exprInfo = arrayInfos.back();
         isDiverge |= exprInfo.isDiverge;
         arrayTypes.emplace_back(exprInfo.type);
       }
       auto entryType = LeastUpperBoundCoercion(arrayTypes);
       if (entryType.kind == TypeKind::Error) {
         return ExprInfo{Type(TypeKind::Error), false};
+      }
+      for (std::size_t i = 0; i < arrayInfos.size(); ++i) {
+        auto &exprInfo = arrayInfos[i];
+        std::vector<Adjustment> pending;
+        if (!checkCoercionEnability(exprInfo.type, entryType, pending) ||
+            !checkCoercionPermission(exprInfo, entryType)) {
+          error.occur(entries[i]->pos,
+                      "Invalid Expression: array element cannot coerce to the "
+                      "common type with the required mutability");
+          return ExprInfo{Type(TypeKind::Error), false};
+        }
+        entries[i]->semantic->adjustments = std::move(pending);
+        entries[i]->semantic->adjustedType = entryType;
       }
       arrayType.elementType = std::make_unique<Type>(std::move(entryType));
       ConstValue length;
@@ -2852,7 +3167,7 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
       const auto &[value, length] = std::get<
           std::pair<std::unique_ptr<ExprNode>, std::unique_ptr<ConstExprNode>>>(
           node->arrayEntries);
-      auto exprInfo = std::any_cast<ExprInfo>(value->accept(this));
+      auto exprInfo = analyzeExpr(value.get());
       if (exprInfo.type.kind == TypeKind::Error) {
         return ExprInfo{Type(TypeKind::Error), false};
       }
@@ -2881,7 +3196,7 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
       if (arrayType.kind == TypeKind::Array) {
         arrayType.elementType = std::make_unique<Type>(*expectedType);
       }
-      if (expectedLength != entries.size()) {
+      if (!std::cmp_equal(expectedLength, entries.size())) {
         error.occur(node->pos,
                     "Invalid Expression: array literal has " +
                         std::to_string(entries.size()) +
@@ -2929,7 +3244,7 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
 
 auto SemanticAnalyzer::analyzeLoopExpr(InfiniteLoopExprNode *node,
                                        Type *expected) -> ExprInfo {
-  LoopGuard guard(loopStack, LoopContext(LoopKind::Loop));
+  auto _ = LoopGuard(loopStack, LoopContext(LoopKind::Loop));
   loopStack.top().expected = expected;
   Type unitType(TypeKind::Unit);
   auto bodyInfo = checkExpr(node->body.get(), &unitType);
@@ -2937,14 +3252,14 @@ auto SemanticAnalyzer::analyzeLoopExpr(InfiniteLoopExprNode *node,
     return ExprInfo{Type(TypeKind::Error), false};
   }
   auto &ctx = loopStack.top();
-  if (ctx.breakValues.empty()) {
+  if (ctx.breakInfos.empty()) {
     return ExprInfo{Type(TypeKind::Never), true};
   } else {
     // The loop diverges only if every break operand diverges.
     bool isDiverge = true;
     if (expected) {
       bool hasErrorType = false;
-      for (auto &info : ctx.breakValues) {
+      for (auto &info : ctx.breakInfos) {
         isDiverge &= info.isDiverge;
         hasErrorType |= info.type.kind == TypeKind::Error;
       }
@@ -2955,39 +3270,64 @@ auto SemanticAnalyzer::analyzeLoopExpr(InfiniteLoopExprNode *node,
       }
     } else {
       std::vector<Type> breakTypes;
-      for (auto &info : ctx.breakValues) {
+      for (auto &info : ctx.breakInfos) {
         isDiverge &= info.isDiverge;
-        breakTypes.push_back(std::move(info.type));
+        breakTypes.emplace_back(info.type);
       }
       auto mergeType = LeastUpperBoundCoercion(breakTypes);
+      if (mergeType.kind != TypeKind::Error) {
+        for (std::size_t i = 0; i < ctx.breakNodes.size(); ++i) {
+          auto &info = ctx.breakInfos[i];
+          auto *valueNode = ctx.breakNodes[i]->loopValue.get();
+          std::vector<Adjustment> pending;
+          if (!checkCoercionEnability(info.type, mergeType, pending) ||
+              !checkCoercionPermission(info, mergeType)) {
+            error.occur(valueNode->pos,
+                        "Invalid Expression: break value cannot coerce to the "
+                        "common type with the required mutability");
+            return ExprInfo{Type(TypeKind::Error), false};
+          }
+          valueNode->semantic->adjustments = std::move(pending);
+          valueNode->semantic->adjustedType = mergeType;
+        }
+      }
       return ExprInfo{mergeType, isDiverge};
     }
   }
 }
 
 ExprInfo SemanticAnalyzer::checkExpr(ExprNode *node, Type *expected) {
+  auto saveAdjustedSemantic = [node](ExprInfo info) {
+    node->semantic->adjustedType = info.type;
+    return info;
+  };
   auto exprInfo = analyzeExpr(node, expected);
   if (exprInfo.type.kind == TypeKind::Error ||
       (expected && expected->kind == TypeKind::Error)) {
     exprInfo.type = Type(TypeKind::Error);
-    return exprInfo;
-  }
-  if (expected && !checkCoercionEnability(exprInfo.type, *expected)) {
-    error.occur(node->pos,
-                "Invalid Expression: the expression type is incompatible "
-                "with the expected type; no supported coercion applies");
-    exprInfo.type = Type(TypeKind::Error);
-  } else if (expected) {
-    if (!checkCoercionPermission(exprInfo, *expected)) {
-      error.occur(node->pos,
-                  "Invalid Expression: mutability-blocked type cannot "
-                  "coercion to a mutable reference");
-      exprInfo.type = Type(TypeKind::Error);
-      return exprInfo;
+  } else {
+    if (expected) {
+      std::vector<Adjustment> pending;
+      bool enability =
+          checkCoercionEnability(exprInfo.type, *expected, pending);
+      bool permission = checkCoercionPermission(exprInfo, *expected);
+      if (!enability) {
+        error.occur(node->pos,
+                    "Invalid Expression: the expression type is incompatible "
+                    "with the expected type; no supported coercion applies");
+        exprInfo.type = Type(TypeKind::Error);
+      } else if (!permission) {
+        error.occur(node->pos,
+                    "Invalid Expression: mutability-blocked type cannot "
+                    "coercion to a mutable reference");
+        exprInfo.type = Type(TypeKind::Error);
+      } else {
+        exprInfo.type = *expected;
+        node->semantic->adjustments = std::move(pending);
+      }
     }
-    exprInfo.type = *expected;
   }
-  return exprInfo;
+  return saveAdjustedSemantic(std::move(exprInfo));
 }
 
 bool SemanticAnalyzer::hasTrait(const Type &type, BuiltinTrait trait) {

@@ -1,5 +1,7 @@
 #include "ASTBuilder.hpp"
 #include "ASTPrinter.hpp"
+#include "IR/IRGenerator.hpp"
+#include "IR/IRPrinter.hpp"
 #include "RxLexer.h"
 #include "RxParser.h"
 #include "SemanticAnalyzer.hpp"
@@ -14,18 +16,31 @@ int main(int argc, char **argv) {
 
   // Parse command-line arguments.
   bool printAst = false;
+  bool checkOnly = false;
   const char *path = nullptr;
+  const char *outputPath = "IR.ll";
+  bool hasOutputPath = false;
   for (int i = 1; i < argc; ++i) {
     const std::string arg = argv[i];
     if (arg == "--ast") {
       printAst = true;
+    } else if (arg == "--check") {
+      checkOnly = true;
+    } else if (arg == "-o") {
+      if (hasOutputPath || ++i == argc) {
+        return 2;
+      }
+      outputPath = argv[i];
+      hasOutputPath = true;
+    } else if (arg.starts_with('-')) {
+      return 2;
     } else if (path == nullptr) {
       path = argv[i];
     } else {
       return 2;
     }
   }
-  if (path == nullptr) {
+  if (path == nullptr || (checkOnly && hasOutputPath)) {
     return 2;
   }
 
@@ -111,6 +126,29 @@ int main(int argc, char **argv) {
   if (analyzer.error.hasError()) {
     analyzer.error.report(std::cerr);
     return 1;
+  }
+
+  if (checkOnly) {
+    return 0;
+  }
+
+  // Print the available IR after all semantic checks succeed.
+  IRModules modules;
+  std::ofstream irFile(outputPath);
+  if (!irFile) {
+    std::cerr << "File error: could not open `" << outputPath
+              << "` for writing\n";
+    return 2;
+  }
+  modules.addRxItems(analyzer);
+  IRGenerator generator(modules);
+  crate->accept(&generator);
+  IRPrinter printer(irFile);
+  modules.accept(&printer);
+  irFile.close();
+  if (!irFile) {
+    std::cerr << "File error: failed to write `" << outputPath << "`\n";
+    return 2;
   }
 
   return 0;

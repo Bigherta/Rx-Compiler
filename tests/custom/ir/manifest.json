@@ -1,0 +1,16 @@
+[
+  {
+    "source": "empty-function.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [{ "input": null, "output": "empty.out" }],
+    "description": "The compiler's empty main IR must compile with Clang 22 and execute successfully in REIMU without output."
+  },
+  {
+    "source": "early-return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [{ "input": null, "output": "empty.out" }],
+    "description": "An explicit unit return must terminate the main block without emitting another terminator."
+  }
+]

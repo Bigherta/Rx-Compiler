@@ -1,0 +1,50 @@
+[
+  {
+    "source": "acc-io-calls.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "I/O builtins resolve outside the user global symbol table, including inside impl functions."
+  },
+  {
+    "source": "acc-local-shadowing.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Local bindings and parameters retain precedence over builtin function names."
+  },
+  {
+    "source": "rej-argument-type.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "The builtin print signature still requires an i32 argument."
+  },
+  {
+    "source": "rej-argument-count.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "The builtin input signature still takes no arguments."
+  },
+  {
+    "source": "rej-shadowed-call.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A non-callable local binding hides the builtin instead of falling back to it."
+  },
+  {
+    "source": "rej-reserved-function.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Builtin function names remain reserved for top-level function declarations."
+  },
+  {
+    "source": "rej-reserved-constant.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Builtin function names remain reserved for top-level constants."
+  },
+  {
+    "source": "rej-internal-clone-name.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "Populating builtinFunctions with a clone signature does not expose its internal key as a source-level name."
+  }
+]

@@ -1,21 +1,23 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.28)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Initialize dependencies when src is used as the top-level project.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  # Select Clang before project() enables compiler detection.
+  # Select GCC 14 before project() enables compiler detection.
   if(NOT DEFINED CMAKE_C_COMPILER)
-    set(CMAKE_C_COMPILER clang CACHE STRING "C compiler")
+    set(CMAKE_C_COMPILER gcc-14 CACHE STRING "C compiler")
   endif()
   if(NOT DEFINED CMAKE_CXX_COMPILER)
-    set(CMAKE_CXX_COMPILER clang++ CACHE STRING "C++ compiler")
+    set(CMAKE_CXX_COMPILER g++-14 CACHE STRING "C++ compiler")
   endif()
+  set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
+    "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/GccCxx26Compat.cmake")
 
   project(rx_compiler LANGUAGES CXX)
 
   include(CTest)
 
-  set(CMAKE_CXX_STANDARD 23)
+  set(CMAKE_CXX_STANDARD 26)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
   include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AntlrRuntime.cmake")
@@ -55,7 +57,11 @@ add_executable(rx_compiler main.cpp
   Frontend/SymbolCollector.cpp
   Frontend/Scope.hpp
   Frontend/SemanticAnalyzer.hpp
-  Frontend/SemanticAnalyzer.cpp)
+  Frontend/SemanticAnalyzer.cpp
+  Frontend/SemanticResult.hpp
+  IR/IRPrinter.hpp
+  IR/IRGenerator.cpp
+  IR/IRVisitor.hpp)
 target_link_libraries(rx_compiler PRIVATE rx_parser)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Coverage.cmake")

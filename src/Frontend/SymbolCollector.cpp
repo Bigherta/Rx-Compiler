@@ -140,6 +140,7 @@ std::any SymbolCollector::visitFunctionDeclItem(FunctionDeclItemNode *node) {
   }
   FunctionSymbol func(node->identifier);
   func.pos = node->pos;
+  func.declaration = node;
   if (node->returnType != std::nullopt) {
     func.returnType =
         std::any_cast<Type>(node->returnType->get()->accept(this));
@@ -232,6 +233,7 @@ std::any SymbolCollector::visitStructDeclItem(StructDeclItemNode *node) {
                                  node->identifier + "`");
       return {};
     }
+    structSymbol.layoutFields.emplace_back(field.identifier);
     auto fieldType = std::any_cast<Type>(field.fieldType->accept(this));
     auto dependency = checkDependency(fieldType);
     if (dependency) {
@@ -308,6 +310,7 @@ std::any SymbolCollector::visitImplDeclItem(ImplDeclItemNode *node) {
       }
       FunctionSymbol func(functionNode->identifier);
       func.pos = functionNode->pos;
+      func.declaration = functionNode.get();
       if (functionNode->returnType != std::nullopt) {
         func.returnType =
             std::any_cast<Type>(functionNode->returnType->get()->accept(this));

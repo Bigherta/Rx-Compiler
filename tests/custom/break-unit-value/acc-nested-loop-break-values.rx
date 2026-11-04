@@ -1,0 +1,6 @@
+fn main() {
+    let value: i32 = loop {
+        while true { break; }
+        break 42;
+    };
+}

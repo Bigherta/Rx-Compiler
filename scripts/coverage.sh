@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 PYTHON=${PYTHON:-python3}
 
 cmake -S . -B target/coverage-build \
-  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=g++ \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=g++-14 \
   -DRX_USE_SYSTEM_ANTLR=OFF -DRX_FAST_BUILD=OFF -DRX_ENABLE_COVERAGE=ON
 cmake --build target/coverage-build --target rx_compiler -j2
 
@@ -15,12 +15,13 @@ find target/coverage-build -type f -name '*.gcda' -delete
 
 test_status=0
 make test PYTHON="$PYTHON" BUILD= \
-  'SEMANTIC=./target/coverage-build/src/rx_compiler {source}' \
+  'SEMANTIC=./target/coverage-build/src/rx_compiler --check {source}' \
   FILTER=official:semantic,custom STAGE=semantic || test_status=$?
 
 # Generate a partial report even when a regression test fails; keep its exit code.
 mkdir -p target/coverage
 "$PYTHON" -m gcovr target/coverage-build \
+  --gcov-executable gcov-14 \
   --root . \
   --filter 'src/(Frontend|AST)/' --filter 'src/main\.cpp$' \
   --exclude 'src/Frontend/ASTPrinter\.(cpp|hpp)$' \

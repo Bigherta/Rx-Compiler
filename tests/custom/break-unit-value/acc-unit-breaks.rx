@@ -1,0 +1,7 @@
+fn main() {
+    let value: () = loop { break; };
+    while true { break; }
+    loop {
+        if true { break; } else { break (); }
+    }
+}

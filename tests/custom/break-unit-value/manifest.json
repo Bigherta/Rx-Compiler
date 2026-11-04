@@ -1,0 +1,32 @@
+[
+  {
+    "source": "acc-unit-breaks.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "Bare loop breaks and explicit unit loop breaks both produce unit; bare while breaks remain valid."
+  },
+  {
+    "source": "acc-nested-loop-break-values.rx",
+    "stage": "semantic",
+    "compilation_success": true,
+    "description": "A bare break in an inner while must not contribute a unit value to the outer value-producing loop."
+  },
+  {
+    "source": "rej-while-explicit-unit.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An explicit unit operand is still a break value and cannot target a while loop."
+  },
+  {
+    "source": "rej-while-unit-block.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "An explicit unit-valued block cannot be mistaken for a synthesized bare-break operand."
+  },
+  {
+    "source": "rej-bare-break-expects-integer.rx",
+    "stage": "semantic",
+    "compilation_success": false,
+    "description": "A synthesized unit break value cannot satisfy an integer loop result."
+  }
+]

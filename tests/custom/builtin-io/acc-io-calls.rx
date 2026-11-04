@@ -1,0 +1,14 @@
+struct S {}
+
+impl S {
+    fn read_and_print() {
+        print_i32(get_i32());
+    }
+}
+
+fn main() {
+    let n: i32 = get_i32();
+    let a: () = print_i32(n);
+    let b: () = println_i32(n);
+    S::read_and_print();
+}

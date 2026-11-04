@@ -3,6 +3,7 @@
 #include "AST.hpp"
 #include "ASTBaseVisitor.hpp"
 #include "Scope.hpp"
+#include "SemanticResult.hpp"
 #include "SymbolCollector.hpp"
 #include <cstddef>
 #include <memory>
@@ -41,7 +42,8 @@ enum class LoopKind {
 struct LoopContext {
   LoopKind kind;
   Type *expected = nullptr;
-  std::vector<ExprInfo> breakValues;
+  std::vector<ExprInfo> breakInfos;
+  std::vector<BreakExprNode *> breakNodes;
   bool checkingCondition = false;
   LoopContext(LoopKind kind) : kind(kind) {}
 };
@@ -90,8 +92,7 @@ private:
   std::optional<FunctionContext> functionInfoContainer;
   void analyzeStructDependency(StructSymbol &symbol);
   Type parseIntegerLiteral(const position &pos, std::string literal,
-                           DiagnosticError *err, bool isNegative,
-                           Type *expected = nullptr);
+                           bool isNegative, Type *expected = nullptr);
   long long parseIntegerLiteral(std::string literal);
 
   void analyzeConstantDecl(ConstantSymbol *constant);
@@ -120,6 +121,8 @@ private:
   }
 
   bool checkCoercionEnability(const Type &from, const Type &to);
+  bool checkCoercionEnability(const Type &from, const Type &to,
+                              std::vector<Adjustment> &);
   bool checkCoercionPermission(const ExprInfo &from, const Type &to);
   Type LeastUpperBoundCoercion(const std::vector<Type> &);
   void typeResolveForFunction(FunctionSymbol *,
@@ -137,9 +140,10 @@ private:
                                   const std::string &methodName);
   std::string encodeType(const Type &type) const;
   Type autoDereference(const Type *refType, bool &mutablePlace,
-                       bool &mutationBlocked);
+                       bool &mutationBlocked, std::vector<Adjustment>&adjusts);
   std::vector<ReceiverContext>
   generatePossibleQueue(const Type *calleeType, bool isMutable, bool isBlocked);
+  Type saveType(TypeNode *node, Type &&type);
 
 public:
   DiagnosticError error;
@@ -147,10 +151,22 @@ public:
   globalScope *globalScopeVisitor;
   std::unordered_map<std::string, std::unique_ptr<FunctionSymbol>>
       builtinFunctions;
+  std::vector<std::unique_ptr<LocalSymbol>> localBindings;
   explicit SemanticAnalyzer(SymbolCollector &&collector) {
     error = collector.error;
     currentScope = std::make_unique<globalScope>(std::move(collector), &error);
     globalScopeVisitor = static_cast<globalScope *>(currentScope.get());
+    builtinFunctions.emplace(
+        "get_i32", std::make_unique<FunctionSymbol>(
+                       "get_i32", Type{TypeKind::I32}, std::vector<Type>{}));
+    builtinFunctions.emplace(
+        "print_i32", std::make_unique<FunctionSymbol>(
+                         "print_i32", Type{TypeKind::Unit},
+                         std::vector<Type>{Type{TypeKind::I32}}));
+    builtinFunctions.emplace(
+        "println_i32", std::make_unique<FunctionSymbol>(
+                           "println_i32", Type{TypeKind::Unit},
+                           std::vector<Type>{Type{TypeKind::I32}}));
   }
 
   void checkConstant();

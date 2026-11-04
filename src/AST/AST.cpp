@@ -1,5 +1,10 @@
 #include "AST.hpp"
 #include "../Frontend/ASTVisitor.hpp"
+#include "../Frontend/SemanticResult.hpp"
+
+TypeNode::TypeNode(const position &pos) : ASTNode(pos) {}
+
+TypeNode::TypeNode(TypeNode &&) noexcept = default;
 
 TypeNode &TypeNode::operator=(TypeNode &&) noexcept = default;
 
@@ -7,9 +12,21 @@ TypeNode &TypeNode::operator=(TypeNode &&) noexcept = default;
 // and typeinfo. Without it every TypeNode subclass fails to link.
 TypeNode::~TypeNode() = default;
 
+ExprNode::ExprNode(const position &pos) : ASTNode(pos) {}
+
+ExprNode::ExprNode(ExprNode &&) noexcept = default;
+
 ExprNode &ExprNode::operator=(ExprNode &&) noexcept = default;
 
 ExprNode::~ExprNode() = default;
+
+StmtNode::StmtNode(const position &pos) : ASTNode(pos) {}
+
+StmtNode::StmtNode(StmtNode &&) noexcept = default;
+
+StmtNode &StmtNode::operator=(StmtNode &&) noexcept = default;
+
+StmtNode::~StmtNode() = default;
 
 PathInExprNode &PathInExprNode::operator=(PathInExprNode &&) noexcept = default;
 
