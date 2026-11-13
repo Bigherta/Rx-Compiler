@@ -5,7 +5,7 @@
 # Write shared runtime assembly there if your IR/CODEGEN output references it.
 BUILD = cmake -S . -B target/oj-build -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_COMPILER=g++-14 \
-    -DRX_FAST_BUILD=ON -DRX_USE_SYSTEM_ANTLR=OFF && \
+    -DRX_FAST_BUILD=ON -DRX_USE_SYSTEM_ANTLR=ON && \
     cmake --build target/oj-build --target rx_compiler -j4 && \
     $(CLANG) --target=riscv32-unknown-elf -march=rv32im -mabi=ilp32 \
     -O2 -fno-builtin -S vendor/runtime/runtime.c -o {runtime}
