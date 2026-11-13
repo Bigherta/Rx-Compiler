@@ -19,6 +19,12 @@ export RX_TEST_CODEGEN = $(CODEGEN)
 export RX_TEST_RUN = $(RUN)
 export FILTER STAGE CLANG COMPILE_TIMEOUT RUN_TIMEOUT VERBOSE
 
-.PHONY: test
+.PHONY: test runtime
 test:
 	@$(PYTHON) scripts/test.py
+
+# Regenerate and commit this assembly after changing vendor/runtime/runtime.c.
+# The OJ C++ build image has no Clang or RV32 cross compiler.
+runtime:
+	$(CLANG) --target=riscv32-unknown-elf -march=rv32im -mabi=ilp32 \
+		-O2 -fno-builtin -S vendor/runtime/runtime.c -o vendor/runtime/runtime.s

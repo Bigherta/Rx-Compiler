@@ -27,7 +27,8 @@ xmake f -y -P vendor/REIMU -m release -o target/reimu
 xmake -y -P vendor/REIMU
 ```
 
-默认 `BUILD` 构建本项目编译器，并将 `vendor/runtime/runtime.c` 编译为共享运行时。
+默认 `BUILD` 构建本项目编译器，并将已提交的 `vendor/runtime/runtime.s` 复制为共享运行时。
+该汇编由产品 `runtime.c` 生成；修改 C 文件后运行 `make runtime` 并提交更新。
 不要直接设置 `BUILD=` 来跳过它，否则每次运行新建的运行时文件为空。
 命令模板在 `config.mk`；日志、原始 IR、汇编和实际输出位于 `target/tests/run-*/`。
 
