@@ -5,8 +5,10 @@
 # Write shared runtime assembly there if your IR/CODEGEN output references it.
 BUILD = cmake -S . -B target/oj-build -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_COMPILER=g++-14 \
-    -DRX_FAST_BUILD=ON -DRX_USE_SYSTEM_ANTLR=ON && \
-    cmake --build target/oj-build --target rx_compiler -j4 && : > {runtime}
+    -DRX_FAST_BUILD=ON -DRX_USE_SYSTEM_ANTLR=OFF && \
+    cmake --build target/oj-build --target rx_compiler -j4 && \
+    $(CLANG) --target=riscv32-unknown-elf -march=rv32im -mabi=ilp32 \
+    -O2 -fno-builtin -S vendor/runtime/runtime.c -o {runtime}
 
 # Required for semantic tests: exit 0 to accept {source}, 1 to reject it.
 SEMANTIC = ./target/oj-build/src/rx_compiler --check {source}

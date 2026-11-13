@@ -1,0 +1,16 @@
+fn bump(p: &mut i32) { *p += 1; }
+
+fn tail_assignment(p: &mut i32) { *p = 23 }
+
+fn tail_call(p: &mut i32) { bump(p) }
+
+fn tail_expressions() -> i32 {
+    let mut n: i32 = 0;
+    let a: () = tail_assignment(&mut n);
+    let b: () = tail_call(&mut n);
+    n
+}
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(tail_expressions() as i32); remaining -= 1; }
+}

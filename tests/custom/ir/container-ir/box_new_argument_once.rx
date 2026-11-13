@@ -1,0 +1,8 @@
+fn make(n: &mut i32) -> i32 { *n += 1; *n }
+
+fn subject() -> i32 { let mut n: i32 = 0; let b: Box<i32> = Box::<i32>::new(make(&mut n)); n * 100 + *b }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

@@ -1,0 +1,112 @@
+[
+  {
+    "source": "empty_refill.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "empty_refill.out"
+      }
+    ]
+  },
+  {
+    "source": "two_phase_receiver.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "two_phase_receiver.out"
+      }
+    ]
+  },
+  {
+    "source": "receiver_and_argument_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "receiver_and_argument_once.out"
+      }
+    ]
+  },
+  {
+    "source": "non_clone_ownership_and_refill.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "non_clone_ownership_and_refill.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_vec_mutation.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nested_vec_mutation.out"
+      }
+    ]
+  },
+  {
+    "source": "boxed_vector.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "boxed_vector.out"
+      }
+    ]
+  },
+  {
+    "source": "mutable_reference_move.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "mutable_reference_move.out"
+      }
+    ]
+  },
+  {
+    "source": "clone_after_relocation.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "clone_after_relocation.out"
+      }
+    ]
+  },
+  {
+    "source": "randomized_reference_model.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "randomized_reference_model.out"
+      }
+    ]
+  },
+  {
+    "source": "remove_bool_array_stride_3_spare.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "remove_bool_array_stride_3_spare.out"
+      }
+    ]
+  }
+]

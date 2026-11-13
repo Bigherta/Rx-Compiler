@@ -1,0 +1,7 @@
+fn bump(p: &mut i32) -> i32 { *p += 1; *p }
+fn subject() -> i32 { let mut n: i32 = 0; let a: [i32; 4096] = [bump(&mut n); 4096]; let mut i: usize = 0; let mut sum: i32 = 0; while i < 4096usize { sum += a[i]; i += 1usize; } sum + n }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

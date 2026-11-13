@@ -1,0 +1,10 @@
+fn subject(v: Vec<i32>) -> usize { Vec::<i32>::len(&v) }
+fn main() {
+let mut input = Vec::<i32>::new();
+input.push(0);
+input.push(0);
+input.push(0);
+
+let value = subject(input);
+println_i32(value as i32);
+}

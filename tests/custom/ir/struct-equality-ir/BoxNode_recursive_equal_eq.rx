@@ -1,0 +1,22 @@
+#[derive(Clone, PartialEq, Eq)]
+struct BoxNode { value: i32, children: Vec<Box<BoxNode>> }
+fn subject(a: &BoxNode, b: &BoxNode) -> i32 { (a == b) as i32 }
+fn main() {
+let mut fixture_3 = Vec::<Box<BoxNode>>::new();
+let mut fixture_7 = Vec::<Box<BoxNode>>::new();
+let mut fixture_11 = Vec::<Box<BoxNode>>::new();
+fixture_7.push(Box::<BoxNode>::new(BoxNode { value: (7 as i32), children: fixture_11 }));
+fixture_3.push(Box::<BoxNode>::new(BoxNode { value: (3 as i32), children: fixture_7 }));
+let mut fixture_15 = Vec::<Box<BoxNode>>::new();
+fixture_3.push(Box::<BoxNode>::new(BoxNode { value: (7 as i32), children: fixture_15 }));
+let mut left: BoxNode = BoxNode { value: (1 as i32), children: fixture_3 };
+let mut fixture_18 = Vec::<Box<BoxNode>>::new();
+let mut fixture_22 = Vec::<Box<BoxNode>>::new();
+let mut fixture_26 = Vec::<Box<BoxNode>>::new();
+fixture_22.push(Box::<BoxNode>::new(BoxNode { value: (7 as i32), children: fixture_26 }));
+fixture_18.push(Box::<BoxNode>::new(BoxNode { value: (3 as i32), children: fixture_22 }));
+let mut fixture_30 = Vec::<Box<BoxNode>>::new();
+fixture_18.push(Box::<BoxNode>::new(BoxNode { value: (7 as i32), children: fixture_30 }));
+let mut right: BoxNode = BoxNode { value: (1 as i32), children: fixture_18 };
+println_i32(subject(&left, &right));
+}

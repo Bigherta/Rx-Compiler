@@ -1,0 +1,17 @@
+fn mutation_receiver<'a>(v: &'a mut Vec<i32>, log: &mut i32) -> &'a mut Vec<i32> {
+    *log = *log * 10 + 1; v
+}
+fn mutation_argument(log: &mut i32) -> i32 { *log = *log * 10 + 2; *log }
+fn mutation_index(log: &mut i32) -> usize { *log = *log * 10 + 3; 0 }
+
+fn subject() -> i32 {
+let mut v = Vec::<i32>::new();
+    let mut log: i32 = 0;
+    mutation_receiver(&mut v, &mut log).push(mutation_argument(&mut log));
+    mutation_receiver(&mut v, &mut log).push(mutation_argument(&mut log));
+    let value = mutation_receiver(&mut v, &mut log).remove(mutation_index(&mut log));
+    if log == 121213 && value == 12 && v[0] == 1212 { 1 } else { 2 }
+}
+fn main() {
+println_i32(subject());
+}

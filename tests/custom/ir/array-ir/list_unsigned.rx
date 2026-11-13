@@ -1,0 +1,7 @@
+fn subject() -> [u32; 2] { [0, 4294967295] }
+fn main() {
+
+let value = subject();
+println_i32(value[0] as i32);
+println_i32(value[1] as i32);
+}

@@ -1,0 +1,8 @@
+#[derive(PartialEq)]
+struct Indirect { value: Box<i32>, tail: bool }
+fn subject(a: &Indirect, b: &Indirect) -> i32 { (a != b) as i32 }
+fn main() {
+let mut left: Indirect = Indirect { value: Box::<i32>::new((17 as i32)), tail: true };
+let mut right: Indirect = Indirect { value: Box::<i32>::new((29 as i32)), tail: true };
+println_i32(subject(&left, &right));
+}

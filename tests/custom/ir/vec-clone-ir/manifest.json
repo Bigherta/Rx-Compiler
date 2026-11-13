@@ -1,0 +1,112 @@
+[
+  {
+    "source": "empty_new.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "empty_new.out"
+      }
+    ]
+  },
+  {
+    "source": "u32_edges.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "u32_edges.out"
+      }
+    ]
+  },
+  {
+    "source": "bool_array_stride_3.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "bool_array_stride_3.out"
+      }
+    ]
+  },
+  {
+    "source": "struct_padding_stride_12.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "struct_padding_stride_12.out"
+      }
+    ]
+  },
+  {
+    "source": "box_elements_spare_uninitialized.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_elements_spare_uninitialized.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_vec.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nested_vec.out"
+      }
+    ]
+  },
+  {
+    "source": "shared_reference_to_non_clone.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "shared_reference_to_non_clone.out"
+      }
+    ]
+  },
+  {
+    "source": "receiver_evaluated_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "receiver_evaluated_once.out"
+      }
+    ]
+  },
+  {
+    "source": "inherent_element_clone_not_used.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "inherent_element_clone_not_used.out"
+      }
+    ]
+  },
+  {
+    "source": "recursive_node.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "recursive_node.out"
+      }
+    ]
+  }
+]

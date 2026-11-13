@@ -1,0 +1,8 @@
+#[derive(Clone)]
+struct Zero { values: [i32; 0], n: i32 }
+fn subject() -> Zero { (Zero { values: [], n: 17 }).clone() }
+fn main() {
+
+let value = subject();
+println_i32(value.n as i32);
+}

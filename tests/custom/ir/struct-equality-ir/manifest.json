@@ -1,0 +1,134 @@
+[
+  {
+    "source": "empty_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "empty_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "receiver_double_shared_ne.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "receiver_double_shared_ne.out"
+      }
+    ]
+  },
+  {
+    "source": "mismatch_2_ne.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "mismatch_2_ne.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_last_mismatch_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nested_last_mismatch_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "array_field_mismatch_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "array_field_mismatch_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "reference_equal_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "reference_equal_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "box_mismatch_ne.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_mismatch_ne.out"
+      }
+    ]
+  },
+  {
+    "source": "vec_of_structs_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "vec_of_structs_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "two_comparisons.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "two_comparisons.out"
+      }
+    ]
+  },
+  {
+    "source": "Node_deep_mismatch_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "Node_deep_mismatch_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "BoxNode_recursive_equal_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "BoxNode_recursive_equal_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "mutual_recursive_mismatch_ne.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "mutual_recursive_mismatch_ne.out"
+      }
+    ]
+  }
+]

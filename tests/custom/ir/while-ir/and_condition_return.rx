@@ -1,0 +1,9 @@
+fn and_condition_return(flag: bool) -> i32 {
+    while flag && { return 7; false } { return 99; }
+    31
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(and_condition_return((get_i32() != 0)) as i32); remaining -= 1; }
+}

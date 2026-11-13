@@ -1,0 +1,8 @@
+fn bump(n: &mut i32) { *n += 1; }
+fn combine(a: i32, b: i32) -> i32 { a * 100 + b }
+fn consume(u: (), n: &mut i32) { *n += 100; }
+fn many_value_loops() -> i32 { let mut n: i32 = 0; n += loop { break 1; }; n += loop { break 2; }; n += loop { break 3; }; n += loop { break 4; }; n += loop { break 5; }; n += loop { break 6; }; n += loop { break 7; }; n += loop { break 8; }; n += loop { break 9; }; n += loop { break 10; }; n += loop { break 11; }; n += loop { break 12; }; n += loop { break 13; }; n += loop { break 14; }; n += loop { break 15; }; n += loop { break 16; }; n += loop { break 17; }; n += loop { break 18; }; n += loop { break 19; }; n += loop { break 20; }; n += loop { break 21; }; n += loop { break 22; }; n += loop { break 23; }; n += loop { break 24; }; n += loop { break 25; }; n += loop { break 26; }; n += loop { break 27; }; n += loop { break 28; }; n += loop { break 29; }; n += loop { break 30; }; n += loop { break 31; }; n += loop { break 32; }; n += loop { break 33; }; n += loop { break 34; }; n += loop { break 35; }; n += loop { break 36; }; n += loop { break 37; }; n += loop { break 38; }; n += loop { break 39; }; n += loop { break 40; }; n }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(many_value_loops() as i32); remaining -= 1; }
+}

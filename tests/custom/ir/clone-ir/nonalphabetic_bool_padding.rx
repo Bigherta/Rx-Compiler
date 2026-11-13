@@ -1,0 +1,10 @@
+#[derive(Clone)]
+struct Odd { z: bool, a: i32, m: bool }
+fn subject() -> Odd { (Odd { m: true, a: -1234567, z: false }).clone() }
+fn main() {
+
+let value = subject();
+println_i32(value.z as i32);
+println_i32(value.a as i32);
+println_i32(value.m as i32);
+}

@@ -1,0 +1,592 @@
+fn subject() -> i32 {
+let mut v = Vec::<i32>::new();
+v.push(-4146);
+if v.len() != 1usize { return 200; }
+if v[0] != -4146 { return 400; }
+v.push(-5720);
+if v.len() != 2usize { return 201; }
+if v[0] != -4146 { return 401; }
+if v[1] != -5720 { return 401; }
+v.push(-9685);
+if v.len() != 3usize { return 202; }
+if v[0] != -4146 { return 402; }
+if v[1] != -5720 { return 402; }
+if v[2] != -9685 { return 402; }
+if v.remove(0) != -4146 { return 5; }
+if v.len() != 2usize { return 203; }
+if v[0] != -5720 { return 403; }
+if v[1] != -9685 { return 403; }
+if v.remove(0) != -5720 { return 6; }
+if v.len() != 1usize { return 204; }
+if v[0] != -9685 { return 404; }
+v.push(-8414);
+if v.len() != 2usize { return 205; }
+if v[0] != -9685 { return 405; }
+if v[1] != -8414 { return 405; }
+if v.remove(0) != -9685 { return 8; }
+if v.len() != 1usize { return 206; }
+if v[0] != -8414 { return 406; }
+if v.remove(0) != -8414 { return 9; }
+if v.len() != 0usize { return 207; }
+v.push(9666);
+if v.len() != 1usize { return 208; }
+if v[0] != 9666 { return 408; }
+v.push(-8982);
+if v.len() != 2usize { return 209; }
+if v[0] != 9666 { return 409; }
+if v[1] != -8982 { return 409; }
+v.push(6374);
+if v.len() != 3usize { return 210; }
+if v[0] != 9666 { return 410; }
+if v[1] != -8982 { return 410; }
+if v[2] != 6374 { return 410; }
+v.push(-53);
+if v.len() != 4usize { return 211; }
+if v[0] != 9666 { return 411; }
+if v[2] != 6374 { return 411; }
+if v[3] != -53 { return 411; }
+if v.remove(3) != -53 { return 14; }
+if v.len() != 3usize { return 212; }
+if v[0] != 9666 { return 412; }
+if v[1] != -8982 { return 412; }
+if v[2] != 6374 { return 412; }
+v.push(-8464);
+if v.len() != 4usize { return 213; }
+if v[0] != 9666 { return 413; }
+if v[2] != 6374 { return 413; }
+if v[3] != -8464 { return 413; }
+if v.remove(3) != -8464 { return 16; }
+if v.len() != 3usize { return 214; }
+if v[0] != 9666 { return 414; }
+if v[1] != -8982 { return 414; }
+if v[2] != 6374 { return 414; }
+v.push(-735);
+if v.len() != 4usize { return 215; }
+if v[0] != 9666 { return 415; }
+if v[2] != 6374 { return 415; }
+if v[3] != -735 { return 415; }
+v.push(-4565);
+if v.len() != 5usize { return 216; }
+if v[0] != 9666 { return 416; }
+if v[2] != 6374 { return 416; }
+if v[4] != -4565 { return 416; }
+v.push(1710);
+if v.len() != 6usize { return 217; }
+if v[0] != 9666 { return 417; }
+if v[3] != -735 { return 417; }
+if v[5] != 1710 { return 417; }
+if v.remove(3) != -735 { return 20; }
+if v.len() != 5usize { return 218; }
+if v[0] != 9666 { return 418; }
+if v[2] != 6374 { return 418; }
+if v[4] != 1710 { return 418; }
+v.push(2950);
+if v.len() != 6usize { return 219; }
+if v[0] != 9666 { return 419; }
+if v[3] != -4565 { return 419; }
+if v[5] != 2950 { return 419; }
+v.push(7200);
+if v.len() != 7usize { return 220; }
+if v[0] != 9666 { return 420; }
+if v[3] != -4565 { return 420; }
+if v[6] != 7200 { return 420; }
+v.push(6965);
+if v.len() != 8usize { return 221; }
+if v[0] != 9666 { return 421; }
+if v[4] != 1710 { return 421; }
+if v[7] != 6965 { return 421; }
+if v.remove(6) != 7200 { return 24; }
+if v.len() != 7usize { return 222; }
+if v[0] != 9666 { return 422; }
+if v[3] != -4565 { return 422; }
+if v[6] != 6965 { return 422; }
+v.push(7790);
+if v.len() != 8usize { return 223; }
+if v[0] != 9666 { return 423; }
+if v[4] != 1710 { return 423; }
+if v[7] != 7790 { return 423; }
+if v.remove(1) != -8982 { return 26; }
+if v.len() != 7usize { return 224; }
+if v[0] != 9666 { return 424; }
+if v[3] != 1710 { return 424; }
+if v[6] != 7790 { return 424; }
+v.push(-988);
+if v.len() != 8usize { return 225; }
+if v[0] != 9666 { return 425; }
+if v[4] != 2950 { return 425; }
+if v[7] != -988 { return 425; }
+v.push(-9976);
+if v.len() != 9usize { return 226; }
+if v[0] != 9666 { return 426; }
+if v[4] != 2950 { return 426; }
+if v[8] != -9976 { return 426; }
+v.push(-4670);
+if v.len() != 10usize { return 227; }
+if v[0] != 9666 { return 427; }
+if v[5] != 6965 { return 427; }
+if v[9] != -4670 { return 427; }
+v.push(-7509);
+if v.len() != 11usize { return 228; }
+if v[0] != 9666 { return 428; }
+if v[5] != 6965 { return 428; }
+if v[10] != -7509 { return 428; }
+if v.remove(5) != 6965 { return 31; }
+if v.len() != 10usize { return 229; }
+if v[0] != 9666 { return 429; }
+if v[5] != 7790 { return 429; }
+if v[9] != -7509 { return 429; }
+v.push(6814);
+if v.len() != 11usize { return 230; }
+if v[0] != 9666 { return 430; }
+if v[5] != 7790 { return 430; }
+if v[10] != 6814 { return 430; }
+v.push(2648);
+if v.len() != 12usize { return 231; }
+if v[0] != 9666 { return 431; }
+if v[6] != -988 { return 431; }
+if v[11] != 2648 { return 431; }
+v.push(-2082);
+if v.len() != 13usize { return 232; }
+if v[0] != 9666 { return 432; }
+if v[6] != -988 { return 432; }
+if v[12] != -2082 { return 432; }
+v.push(3729);
+if v.len() != 14usize { return 233; }
+if v[0] != 9666 { return 433; }
+if v[7] != -9976 { return 433; }
+if v[13] != 3729 { return 433; }
+v.push(-6930);
+if v.len() != 15usize { return 234; }
+if v[0] != 9666 { return 434; }
+if v[7] != -9976 { return 434; }
+if v[14] != -6930 { return 434; }
+if v.remove(12) != -2082 { return 37; }
+if v.len() != 14usize { return 235; }
+if v[0] != 9666 { return 435; }
+if v[7] != -9976 { return 435; }
+if v[13] != -6930 { return 435; }
+v.push(7069);
+if v.len() != 15usize { return 236; }
+if v[0] != 9666 { return 436; }
+if v[7] != -9976 { return 436; }
+if v[14] != 7069 { return 436; }
+v.push(9864);
+if v.len() != 16usize { return 237; }
+if v[0] != 9666 { return 437; }
+if v[8] != -4670 { return 437; }
+if v[15] != 9864 { return 437; }
+v.push(6500);
+if v.len() != 17usize { return 238; }
+if v[0] != 9666 { return 438; }
+if v[8] != -4670 { return 438; }
+if v[16] != 6500 { return 438; }
+if v.remove(2) != -4565 { return 41; }
+if v.len() != 16usize { return 239; }
+if v[0] != 9666 { return 439; }
+if v[8] != -7509 { return 439; }
+if v[15] != 6500 { return 439; }
+v.push(-9395);
+if v.len() != 17usize { return 240; }
+if v[0] != 9666 { return 440; }
+if v[8] != -7509 { return 440; }
+if v[16] != -9395 { return 440; }
+if v.remove(0) != 9666 { return 43; }
+if v.len() != 16usize { return 241; }
+if v[0] != 6374 { return 441; }
+if v[8] != 6814 { return 441; }
+if v[15] != -9395 { return 441; }
+v.push(3361);
+if v.len() != 17usize { return 242; }
+if v[0] != 6374 { return 442; }
+if v[8] != 6814 { return 442; }
+if v[16] != 3361 { return 442; }
+if v.remove(4) != -988 { return 45; }
+if v.len() != 16usize { return 243; }
+if v[0] != 6374 { return 443; }
+if v[8] != 2648 { return 443; }
+if v[15] != 3361 { return 443; }
+if v.remove(6) != -7509 { return 46; }
+if v.len() != 15usize { return 244; }
+if v[0] != 6374 { return 444; }
+if v[7] != 2648 { return 444; }
+if v[14] != 3361 { return 444; }
+if v.remove(4) != -9976 { return 47; }
+if v.len() != 14usize { return 245; }
+if v[0] != 6374 { return 445; }
+if v[7] != 3729 { return 445; }
+if v[13] != 3361 { return 445; }
+v.push(7875);
+if v.len() != 15usize { return 246; }
+if v[0] != 6374 { return 446; }
+if v[7] != 3729 { return 446; }
+if v[14] != 7875 { return 446; }
+v.push(-9939);
+if v.len() != 16usize { return 247; }
+if v[0] != 6374 { return 447; }
+if v[8] != -6930 { return 447; }
+if v[15] != -9939 { return 447; }
+if v.remove(6) != 2648 { return 50; }
+if v.len() != 15usize { return 248; }
+if v[0] != 6374 { return 448; }
+if v[7] != -6930 { return 448; }
+if v[14] != -9939 { return 448; }
+if v.remove(5) != 6814 { return 51; }
+if v.len() != 14usize { return 249; }
+if v[0] != 6374 { return 449; }
+if v[7] != 7069 { return 449; }
+if v[13] != -9939 { return 449; }
+if v.remove(5) != 3729 { return 52; }
+if v.len() != 13usize { return 250; }
+if v[0] != 6374 { return 450; }
+if v[6] != 7069 { return 450; }
+if v[12] != -9939 { return 450; }
+v.push(237);
+if v.len() != 14usize { return 251; }
+if v[0] != 6374 { return 451; }
+if v[7] != 9864 { return 451; }
+if v[13] != 237 { return 451; }
+v.push(3643);
+if v.len() != 15usize { return 252; }
+if v[0] != 6374 { return 452; }
+if v[7] != 9864 { return 452; }
+if v[14] != 3643 { return 452; }
+v.push(-4703);
+if v.len() != 16usize { return 253; }
+if v[0] != 6374 { return 453; }
+if v[8] != 6500 { return 453; }
+if v[15] != -4703 { return 453; }
+v.push(7166);
+if v.len() != 17usize { return 254; }
+if v[0] != 6374 { return 454; }
+if v[8] != 6500 { return 454; }
+if v[16] != 7166 { return 454; }
+v.push(-1812);
+if v.len() != 18usize { return 255; }
+if v[0] != 6374 { return 455; }
+if v[9] != -9395 { return 455; }
+if v[17] != -1812 { return 455; }
+v.push(-3340);
+if v.len() != 19usize { return 256; }
+if v[0] != 6374 { return 456; }
+if v[9] != -9395 { return 456; }
+if v[18] != -3340 { return 456; }
+v.push(687);
+if v.len() != 20usize { return 257; }
+if v[0] != 6374 { return 457; }
+if v[10] != 3361 { return 457; }
+if v[19] != 687 { return 457; }
+v.push(8339);
+if v.len() != 21usize { return 258; }
+if v[0] != 6374 { return 458; }
+if v[10] != 3361 { return 458; }
+if v[20] != 8339 { return 458; }
+v.push(9878);
+if v.len() != 22usize { return 259; }
+if v[0] != 6374 { return 459; }
+if v[11] != 7875 { return 459; }
+if v[21] != 9878 { return 459; }
+if v.remove(5) != -6930 { return 62; }
+if v.len() != 21usize { return 260; }
+if v[0] != 6374 { return 460; }
+if v[10] != 7875 { return 460; }
+if v[20] != 9878 { return 460; }
+if v.remove(10) != 7875 { return 63; }
+if v.len() != 20usize { return 261; }
+if v[0] != 6374 { return 461; }
+if v[10] != -9939 { return 461; }
+if v[19] != 9878 { return 461; }
+v.push(2835);
+if v.len() != 21usize { return 262; }
+if v[0] != 6374 { return 462; }
+if v[10] != -9939 { return 462; }
+if v[20] != 2835 { return 462; }
+v.push(-9343);
+if v.len() != 22usize { return 263; }
+if v[0] != 6374 { return 463; }
+if v[11] != 237 { return 463; }
+if v[21] != -9343 { return 463; }
+v.push(-7796);
+if v.len() != 23usize { return 264; }
+if v[0] != 6374 { return 464; }
+if v[11] != 237 { return 464; }
+if v[22] != -7796 { return 464; }
+if v.remove(6) != 9864 { return 67; }
+if v.len() != 22usize { return 265; }
+if v[0] != 6374 { return 465; }
+if v[11] != 3643 { return 465; }
+if v[21] != -7796 { return 465; }
+v.push(1903);
+if v.len() != 23usize { return 266; }
+if v[0] != 6374 { return 466; }
+if v[11] != 3643 { return 466; }
+if v[22] != 1903 { return 466; }
+if v.remove(9) != -9939 { return 69; }
+if v.len() != 22usize { return 267; }
+if v[0] != 6374 { return 467; }
+if v[11] != -4703 { return 467; }
+if v[21] != 1903 { return 467; }
+v.push(7602);
+if v.len() != 23usize { return 268; }
+if v[0] != 6374 { return 468; }
+if v[11] != -4703 { return 468; }
+if v[22] != 7602 { return 468; }
+if v.remove(22) != 7602 { return 71; }
+if v.len() != 22usize { return 269; }
+if v[0] != 6374 { return 469; }
+if v[11] != -4703 { return 469; }
+if v[21] != 1903 { return 469; }
+v.push(9890);
+if v.len() != 23usize { return 270; }
+if v[0] != 6374 { return 470; }
+if v[11] != -4703 { return 470; }
+if v[22] != 9890 { return 470; }
+if v.remove(1) != 1710 { return 73; }
+if v.len() != 22usize { return 271; }
+if v[0] != 6374 { return 471; }
+if v[11] != 7166 { return 471; }
+if v[21] != 9890 { return 471; }
+if v.remove(10) != -4703 { return 74; }
+if v.len() != 21usize { return 272; }
+if v[0] != 6374 { return 472; }
+if v[10] != 7166 { return 472; }
+if v[20] != 9890 { return 472; }
+if v.remove(18) != -7796 { return 75; }
+if v.len() != 20usize { return 273; }
+if v[0] != 6374 { return 473; }
+if v[10] != 7166 { return 473; }
+if v[19] != 9890 { return 473; }
+if v.remove(4) != 7069 { return 76; }
+if v.len() != 19usize { return 274; }
+if v[0] != 6374 { return 474; }
+if v[9] != 7166 { return 474; }
+if v[18] != 9890 { return 474; }
+v.push(8408);
+if v.len() != 20usize { return 275; }
+if v[0] != 6374 { return 475; }
+if v[10] != -1812 { return 475; }
+if v[19] != 8408 { return 475; }
+v.push(-7940);
+if v.len() != 21usize { return 276; }
+if v[0] != 6374 { return 476; }
+if v[10] != -1812 { return 476; }
+if v[20] != -7940 { return 476; }
+v.push(4048);
+if v.len() != 22usize { return 277; }
+if v[0] != 6374 { return 477; }
+if v[11] != -3340 { return 477; }
+if v[21] != 4048 { return 477; }
+v.push(-6288);
+if v.len() != 23usize { return 278; }
+if v[0] != 6374 { return 478; }
+if v[11] != -3340 { return 478; }
+if v[22] != -6288 { return 478; }
+v.push(9851);
+if v.len() != 24usize { return 279; }
+if v[0] != 6374 { return 479; }
+if v[12] != 687 { return 479; }
+if v[23] != 9851 { return 479; }
+v.push(4803);
+if v.len() != 25usize { return 280; }
+if v[0] != 6374 { return 480; }
+if v[12] != 687 { return 480; }
+if v[24] != 4803 { return 480; }
+if v.remove(22) != -6288 { return 83; }
+if v.len() != 24usize { return 281; }
+if v[0] != 6374 { return 481; }
+if v[12] != 687 { return 481; }
+if v[23] != 4803 { return 481; }
+if v.remove(1) != 2950 { return 84; }
+if v.len() != 23usize { return 282; }
+if v[0] != 6374 { return 482; }
+if v[11] != 687 { return 482; }
+if v[22] != 4803 { return 482; }
+if v.remove(5) != 3361 { return 85; }
+if v.len() != 22usize { return 283; }
+if v[0] != 6374 { return 483; }
+if v[11] != 8339 { return 483; }
+if v[21] != 4803 { return 483; }
+if v.remove(2) != -4670 { return 86; }
+if v.len() != 21usize { return 284; }
+if v[0] != 6374 { return 484; }
+if v[10] != 8339 { return 484; }
+if v[20] != 4803 { return 484; }
+v.push(-1766);
+if v.len() != 22usize { return 285; }
+if v[0] != 6374 { return 485; }
+if v[11] != 9878 { return 485; }
+if v[21] != -1766 { return 485; }
+v.push(3455);
+if v.len() != 23usize { return 286; }
+if v[0] != 6374 { return 486; }
+if v[11] != 9878 { return 486; }
+if v[22] != 3455 { return 486; }
+v.push(4176);
+if v.len() != 24usize { return 287; }
+if v[0] != 6374 { return 487; }
+if v[12] != 2835 { return 487; }
+if v[23] != 4176 { return 487; }
+if v.remove(4) != 237 { return 90; }
+if v.len() != 23usize { return 288; }
+if v[0] != 6374 { return 488; }
+if v[11] != 2835 { return 488; }
+if v[22] != 4176 { return 488; }
+v.push(-9189);
+if v.len() != 24usize { return 289; }
+if v[0] != 6374 { return 489; }
+if v[12] != -9343 { return 489; }
+if v[23] != -9189 { return 489; }
+if v.remove(2) != 6500 { return 92; }
+if v.len() != 23usize { return 290; }
+if v[0] != 6374 { return 490; }
+if v[11] != -9343 { return 490; }
+if v[22] != -9189 { return 490; }
+v.push(-9512);
+if v.len() != 24usize { return 291; }
+if v[0] != 6374 { return 491; }
+if v[12] != 1903 { return 491; }
+if v[23] != -9512 { return 491; }
+v.push(-708);
+if v.len() != 25usize { return 292; }
+if v[0] != 6374 { return 492; }
+if v[12] != 1903 { return 492; }
+if v[24] != -708 { return 492; }
+v.push(-3419);
+if v.len() != 26usize { return 293; }
+if v[0] != 6374 { return 493; }
+if v[13] != 9890 { return 493; }
+if v[25] != -3419 { return 493; }
+if v.remove(19) != -1766 { return 96; }
+if v.len() != 25usize { return 294; }
+if v[0] != 6374 { return 494; }
+if v[12] != 1903 { return 494; }
+if v[24] != -3419 { return 494; }
+v.push(7382);
+if v.len() != 26usize { return 295; }
+if v[0] != 6374 { return 495; }
+if v[13] != 9890 { return 495; }
+if v[25] != 7382 { return 495; }
+v.push(9344);
+if v.len() != 27usize { return 296; }
+if v[0] != 6374 { return 496; }
+if v[13] != 9890 { return 496; }
+if v[26] != 9344 { return 496; }
+v.push(2534);
+if v.len() != 28usize { return 297; }
+if v[0] != 6374 { return 497; }
+if v[14] != 8408 { return 497; }
+if v[27] != 2534 { return 497; }
+if v.remove(8) != 8339 { return 100; }
+if v.len() != 27usize { return 298; }
+if v[0] != 6374 { return 498; }
+if v[13] != 8408 { return 498; }
+if v[26] != 2534 { return 498; }
+v.push(422);
+if v.len() != 28usize { return 299; }
+if v[0] != 6374 { return 499; }
+if v[14] != -7940 { return 499; }
+if v[27] != 422 { return 499; }
+v.push(8153);
+if v.len() != 29usize { return 300; }
+if v[0] != 6374 { return 500; }
+if v[14] != -7940 { return 500; }
+if v[28] != 8153 { return 500; }
+if v.remove(3) != 3643 { return 103; }
+if v.len() != 28usize { return 301; }
+if v[0] != 6374 { return 501; }
+if v[14] != 4048 { return 501; }
+if v[27] != 8153 { return 501; }
+if v.remove(26) != 422 { return 104; }
+if v.len() != 27usize { return 302; }
+if v[0] != 6374 { return 502; }
+if v[13] != -7940 { return 502; }
+if v[26] != 8153 { return 502; }
+v.push(8050);
+if v.len() != 28usize { return 303; }
+if v[0] != 6374 { return 503; }
+if v[14] != 4048 { return 503; }
+if v[27] != 8050 { return 503; }
+if v.remove(12) != 8408 { return 106; }
+if v.len() != 27usize { return 304; }
+if v[0] != 6374 { return 504; }
+if v[13] != 4048 { return 504; }
+if v[26] != 8050 { return 504; }
+if v.remove(13) != 4048 { return 107; }
+if v.len() != 26usize { return 305; }
+if v[0] != 6374 { return 505; }
+if v[13] != 9851 { return 505; }
+if v[25] != 8050 { return 505; }
+v.push(-7806);
+if v.len() != 27usize { return 306; }
+if v[0] != 6374 { return 506; }
+if v[13] != 9851 { return 506; }
+if v[26] != -7806 { return 506; }
+if v.remove(21) != 7382 { return 109; }
+if v.len() != 26usize { return 307; }
+if v[0] != 6374 { return 507; }
+if v[13] != 9851 { return 507; }
+if v[25] != -7806 { return 507; }
+v.push(-1135);
+if v.len() != 27usize { return 308; }
+if v[0] != 6374 { return 508; }
+if v[13] != 9851 { return 508; }
+if v[26] != -1135 { return 508; }
+v.push(-9784);
+if v.len() != 28usize { return 309; }
+if v[0] != 6374 { return 509; }
+if v[14] != 4803 { return 509; }
+if v[27] != -9784 { return 509; }
+v.push(-7769);
+if v.len() != 29usize { return 310; }
+if v[0] != 6374 { return 510; }
+if v[14] != 4803 { return 510; }
+if v[28] != -7769 { return 510; }
+v.push(3210);
+if v.len() != 30usize { return 311; }
+if v[0] != 6374 { return 511; }
+if v[15] != 3455 { return 511; }
+if v[29] != 3210 { return 511; }
+v.push(-9212);
+if v.len() != 31usize { return 312; }
+if v[0] != 6374 { return 512; }
+if v[15] != 3455 { return 512; }
+if v[30] != -9212 { return 512; }
+if v.remove(30) != -9212 { return 115; }
+if v.len() != 30usize { return 313; }
+if v[0] != 6374 { return 513; }
+if v[15] != 3455 { return 513; }
+if v[29] != 3210 { return 513; }
+v.push(9932);
+if v.len() != 31usize { return 314; }
+if v[0] != 6374 { return 514; }
+if v[15] != 3455 { return 514; }
+if v[30] != 9932 { return 514; }
+v.push(7398);
+if v.len() != 32usize { return 315; }
+if v[0] != 6374 { return 515; }
+if v[16] != 4176 { return 515; }
+if v[31] != 7398 { return 515; }
+v.push(-4328);
+if v.len() != 33usize { return 316; }
+if v[0] != 6374 { return 516; }
+if v[16] != 4176 { return 516; }
+if v[32] != -4328 { return 516; }
+v.push(1430);
+if v.len() != 34usize { return 317; }
+if v[0] != 6374 { return 517; }
+if v[17] != -9189 { return 517; }
+if v[33] != 1430 { return 517; }
+if v.remove(33) != 1430 { return 120; }
+if v.len() != 33usize { return 318; }
+if v[0] != 6374 { return 518; }
+if v[16] != 4176 { return 518; }
+if v[32] != -4328 { return 518; }
+v.push(-5671);
+if v.len() != 34usize { return 319; }
+if v[0] != 6374 { return 519; }
+if v[17] != -9189 { return 519; }
+if v[33] != -5671 { return 519; }
+1
+}
+fn main() {
+println_i32(subject());
+}

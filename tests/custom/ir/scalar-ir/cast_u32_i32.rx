@@ -1,0 +1,5 @@
+fn cast_u32_i32(a: u32) -> i32 { a as i32 }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(cast_u32_i32((get_i32() as u32)) as i32); remaining -= 1; }
+}

@@ -1,0 +1,112 @@
+[
+  {
+    "source": "reordered_side_effect_values.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "reordered_side_effect_values.out"
+      }
+    ]
+  },
+  {
+    "source": "diverging_field.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "diverging_field.out"
+      }
+    ]
+  },
+  {
+    "source": "access_nonalphabetic_layout.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_nonalphabetic_layout.out"
+      }
+    ]
+  },
+  {
+    "source": "access_bool_padding.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_bool_padding.out"
+      }
+    ]
+  },
+  {
+    "source": "access_borrow_temporary_field.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_borrow_temporary_field.out"
+      }
+    ]
+  },
+  {
+    "source": "access_stored_mutable_reference.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_stored_mutable_reference.out"
+      }
+    ]
+  },
+  {
+    "source": "access_struct_array_field_chain.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_struct_array_field_chain.out"
+      }
+    ]
+  },
+  {
+    "source": "access_whole_field_assignment.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_whole_field_assignment.out"
+      }
+    ]
+  },
+  {
+    "source": "access_base_evaluated_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_base_evaluated_once.out"
+      }
+    ]
+  },
+  {
+    "source": "access_by_value_call.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "access_by_value_call.out"
+      }
+    ]
+  }
+]

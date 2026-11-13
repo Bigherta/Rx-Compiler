@@ -1,0 +1,156 @@
+[
+  {
+    "source": "i32_equal_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "i32_equal_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "i32_mismatch_0_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "i32_mismatch_0_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "i32_mismatch_4_ne.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "i32_mismatch_4_ne.out"
+      }
+    ]
+  },
+  {
+    "source": "u32_equal_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "u32_equal_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "bool_mismatch_4_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "bool_mismatch_4_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_mismatch_1_2_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nested_mismatch_1_2_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "three_dimensions_last_mismatch.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "three_dimensions_last_mismatch.out"
+      }
+    ]
+  },
+  {
+    "source": "reference_elements_mutable_mismatch.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "reference_elements_mutable_mismatch.out"
+      }
+    ]
+  },
+  {
+    "source": "reference_elements_distinct_targets.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "reference_elements_distinct_targets.out"
+      }
+    ]
+  },
+  {
+    "source": "comparison_borrows_originals.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "comparison_borrows_originals.out"
+      }
+    ]
+  },
+  {
+    "source": "operand_evaluation_order.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "operand_evaluation_order.out"
+      }
+    ]
+  },
+  {
+    "source": "rhs_evaluated_before_element_short_circuit.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "rhs_evaluated_before_element_short_circuit.out"
+      }
+    ]
+  },
+  {
+    "source": "diverging_left_operand.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "diverging_left_operand.out"
+      }
+    ]
+  },
+  {
+    "source": "diverging_right_operand.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "diverging_right_operand.out"
+      }
+    ]
+  }
+]

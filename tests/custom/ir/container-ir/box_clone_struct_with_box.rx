@@ -1,0 +1,9 @@
+#[derive(Clone)]
+struct Holder { flag: bool, value: Box<i32> }
+
+fn subject() -> i32 { let a: Box<Holder> = Box::<Holder>::new(Holder { flag: true, value: Box::<i32>::new(17) }); let mut b: Box<Holder> = a.clone(); *(*b).value = 29; *(*a).value * 100 + *(*b).value + ((*b).flag as i32) }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

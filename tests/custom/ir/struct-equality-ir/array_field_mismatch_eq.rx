@@ -1,0 +1,8 @@
+#[derive(PartialEq)]
+struct Holder { values: [i32; 2], tail: bool }
+fn subject(a: &Holder, b: &Holder) -> i32 { (a == b) as i32 }
+fn main() {
+let mut left: Holder = Holder { values: [(3 as i32), (5 as i32)], tail: true };
+let mut right: Holder = Holder { values: [(3 as i32), (8 as i32)], tail: true };
+println_i32(subject(&left, &right));
+}

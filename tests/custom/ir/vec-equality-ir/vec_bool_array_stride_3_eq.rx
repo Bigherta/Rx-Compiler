@@ -1,0 +1,12 @@
+fn subject(a: &Vec<[bool; 3]>, b: &Vec<[bool; 3]>) -> i32 { (a == b) as i32 }
+fn main() {
+let mut fixture_1 = Vec::<[bool; 3]>::new();
+fixture_1.push([true, false, true]);
+fixture_1.push([false, true, false]);
+let mut left: Vec<[bool; 3]> = fixture_1;
+let mut fixture_10 = Vec::<[bool; 3]>::new();
+fixture_10.push([true, false, true]);
+fixture_10.push([false, true, false]);
+let mut right: Vec<[bool; 3]> = fixture_10;
+println_i32(subject(&left, &right));
+}

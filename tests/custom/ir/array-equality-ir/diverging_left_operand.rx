@@ -1,0 +1,4 @@
+fn subject() -> i32 { let a: [i32; 2] = [3, 5]; let same = ({ return 17; a }) == a; same as i32 }
+fn main() {
+println_i32(subject());
+}

@@ -1,0 +1,19 @@
+fn subject() -> i32 {
+let mut v = Vec::<i32>::new();
+    let mut round: i32 = 0;
+    while round < 20 {
+        if !v.is_empty() { return 2; }
+        let mut i: i32 = 0;
+        while i < 33 { v.push(round * 100 + i); i += 1; }
+        i = 0;
+        while i < 33 {
+            if v.remove(0) != round * 100 + i { return 3; }
+            i += 1;
+        }
+        round += 1;
+    }
+    if v.len() == 0usize { 1 } else { 4 }
+}
+fn main() {
+println_i32(subject());
+}

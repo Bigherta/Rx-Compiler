@@ -1,0 +1,8 @@
+fn make(p: &mut i32) -> [i32; 2] { *p = *p * 10 + 1; [4, 9] }
+fn next(p: &mut i32) -> usize { *p = *p * 10 + 2; 1 }
+fn subject() -> i32 { let mut n: i32 = 0; let v: i32 = make(&mut n)[next(&mut n)]; n * 100 + v }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

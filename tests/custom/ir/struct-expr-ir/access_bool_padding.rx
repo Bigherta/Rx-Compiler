@@ -1,0 +1,8 @@
+struct Mixed { first: bool, value: i32, last: bool }
+
+fn subject() -> i32 { let mut p: Mixed = Mixed { first: false, value: 1234567, last: true }; p.first = true; p.last = false; p.value + (p.first as i32) * 10 + (p.last as i32) }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

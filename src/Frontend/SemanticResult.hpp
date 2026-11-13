@@ -42,10 +42,6 @@ struct ConstExprSemantic : ExprSemantic {
   }
 };
 
-struct FunctionPathInExprSemantic : public ExprSemantic {
-  const FunctionSymbol *functionSymbol = nullptr;
-};
-
 struct StructPathInExprSemantic : public ExprSemantic {
   const StructSymbol *structSymbol = nullptr;
 };
@@ -67,11 +63,6 @@ struct ValuePathInExprSemantic : public ExprSemantic {
 
 struct CallExprSemantic : public ExprSemantic {
   FunctionSymbol *calleeSymbol = nullptr;
-};
-
-struct MethodCallExprSemantic : public ExprSemantic {
-  FunctionSymbol *calleeSymbol = nullptr;
-  std::vector<Adjustment> receiverAdjustments;
 };
 
 struct AccessExprSemantic : public ExprSemantic {

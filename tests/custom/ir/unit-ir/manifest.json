@@ -1,0 +1,57 @@
+[
+  {
+    "source": "literal_and_block.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "literal_and_block.in",
+        "output": "literal_and_block.out"
+      }
+    ]
+  },
+  {
+    "source": "assignment_chain.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "assignment_chain.in",
+        "output": "assignment_chain.out"
+      }
+    ]
+  },
+  {
+    "source": "call_arguments.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "call_arguments.in",
+        "output": "call_arguments.out"
+      }
+    ]
+  },
+  {
+    "source": "explicit_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "explicit_return.in",
+        "output": "explicit_return.out"
+      }
+    ]
+  },
+  {
+    "source": "tail_expressions.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "tail_expressions.in",
+        "output": "tail_expressions.out"
+      }
+    ]
+  }
+]

@@ -1,0 +1,11 @@
+fn assignment_chain() -> i32 {
+    let mut n: i32 = 0;
+    let mut a: () = ();
+    let result: () = a = n = 13;
+    n
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(assignment_chain() as i32); remaining -= 1; }
+}

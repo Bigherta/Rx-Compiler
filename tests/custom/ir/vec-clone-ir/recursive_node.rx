@@ -1,0 +1,26 @@
+#[derive(Clone)]
+struct Node { value: i32, children: Vec<Node> }
+
+fn subject(v: &Vec<Node>) -> Vec<Node> { v.clone() }
+fn main() {
+let mut fixture_1 = Vec::<Node>::new();
+let mut fixture_4 = Vec::<Node>::new();
+let mut fixture_7 = Vec::<Node>::new();
+fixture_4.push(Node { value: (29 as i32), children: fixture_7 });
+fixture_1.push(Node { value: (17 as i32), children: fixture_4 });
+let mut original: Vec<Node> = fixture_1;
+let mut counter: i32 = 0;
+let mut cloned = subject(&original);
+println_i32((cloned).len() as i32);
+println_i32((((cloned)[0]).value) as i32);
+((cloned)[0]).value = !(((cloned)[0]).value);
+println_i32((((cloned)[0]).children).len() as i32);
+println_i32((((((cloned)[0]).children)[0]).value) as i32);
+((((cloned)[0]).children)[0]).value = !(((((cloned)[0]).children)[0]).value);
+println_i32((((((cloned)[0]).children)[0]).children).len() as i32);
+println_i32((original).len() as i32);
+println_i32((((original)[0]).value) as i32);
+println_i32((((original)[0]).children).len() as i32);
+println_i32((((((original)[0]).children)[0]).value) as i32);
+println_i32((((((original)[0]).children)[0]).children).len() as i32);
+}

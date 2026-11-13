@@ -1,0 +1,11 @@
+#[derive(Copy, Clone)]
+struct Cell { value: i32 }
+
+impl Cell { fn bump(&mut self, amount: i32) -> i32 { self.value += amount; self.value } }
+
+fn subject() -> i32 { let mut c: Cell = Cell { value: 7 }; let mut r: &mut Cell = &mut c; let rr: &mut &mut Cell = &mut r; rr.bump(5); c.value }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

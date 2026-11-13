@@ -1,0 +1,11 @@
+#[derive(Copy, Clone)]
+struct Cell { value: i32 }
+
+impl Cell { fn combine(&self, a: i32, b: i32) -> i32 { self.value + a + b } }
+
+fn subject() -> i32 { let c: Cell = Cell { value: 7 }; c.combine(2, { return 23; }) }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

@@ -1,0 +1,20 @@
+#[derive(PartialEq)]
+struct MutualA { value: i32, children: Vec<MutualB> }
+#[derive(PartialEq)]
+struct MutualB { value: i32, children: Vec<MutualA> }
+fn subject(a: &MutualA, b: &MutualA) -> i32 { (a != b) as i32 }
+fn main() {
+let mut fixture_3 = Vec::<MutualB>::new();
+let mut fixture_6 = Vec::<MutualA>::new();
+let mut fixture_9 = Vec::<MutualB>::new();
+fixture_6.push(MutualA { value: (3 as i32), children: fixture_9 });
+fixture_3.push(MutualB { value: (2 as i32), children: fixture_6 });
+let mut left: MutualA = MutualA { value: (1 as i32), children: fixture_3 };
+let mut fixture_12 = Vec::<MutualB>::new();
+let mut fixture_15 = Vec::<MutualA>::new();
+let mut fixture_18 = Vec::<MutualB>::new();
+fixture_15.push(MutualA { value: (4 as i32), children: fixture_18 });
+fixture_12.push(MutualB { value: (2 as i32), children: fixture_15 });
+let mut right: MutualA = MutualA { value: (1 as i32), children: fixture_12 };
+println_i32(subject(&left, &right));
+}

@@ -1,0 +1,14 @@
+fn subject(a: &mut Vec<i32>, b: &mut Vec<i32>) -> i32 { let same = a == b; a[0] = 19; (same as i32) * 10 + (a != b) as i32 + b[0] }
+fn main() {
+let mut fixture_1 = Vec::<i32>::new();
+fixture_1.push((3 as i32));
+fixture_1.push((-5 as i32));
+fixture_1.push((8 as i32));
+let mut left: Vec<i32> = fixture_1;
+let mut fixture_5 = Vec::<i32>::new();
+fixture_5.push((3 as i32));
+fixture_5.push((-5 as i32));
+fixture_5.push((8 as i32));
+let mut right: Vec<i32> = fixture_5;
+println_i32(subject(&mut left, &mut right));
+}

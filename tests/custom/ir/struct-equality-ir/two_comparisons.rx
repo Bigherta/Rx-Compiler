@@ -1,0 +1,10 @@
+#[derive(PartialEq)]
+struct Odd { z: bool, a: i32, m: bool }
+#[derive(PartialEq)]
+struct Nested { inner: Odd, tail: i32 }
+fn subject(a: &Nested, b: &Nested) -> i32 { (a == b) as i32 * 10 + (a != b) as i32 }
+fn main() {
+let mut left: Nested = Nested { inner: Odd { z: true, a: (-17 as i32), m: false }, tail: (29 as i32) };
+let mut right: Nested = Nested { inner: Odd { z: true, a: (-17 as i32), m: false }, tail: (29 as i32) };
+println_i32(subject(&left, &right));
+}

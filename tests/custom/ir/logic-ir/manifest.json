@@ -1,0 +1,112 @@
+[
+  {
+    "source": "trace_and.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "trace_and.in",
+        "output": "trace_and.out"
+      }
+    ]
+  },
+  {
+    "source": "trace_or.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "trace_or.in",
+        "output": "trace_or.out"
+      }
+    ]
+  },
+  {
+    "source": "guard_division_and.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "guard_division_and.in",
+        "output": "guard_division_and.out"
+      }
+    ]
+  },
+  {
+    "source": "guard_division_or.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "guard_division_or.in",
+        "output": "guard_division_or.out"
+      }
+    ]
+  },
+  {
+    "source": "rhs_return_and.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "rhs_return_and.in",
+        "output": "rhs_return_and.out"
+      }
+    ]
+  },
+  {
+    "source": "rhs_return_or.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "rhs_return_or.in",
+        "output": "rhs_return_or.out"
+      }
+    ]
+  },
+  {
+    "source": "rhs_continue_and.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "rhs_continue_and.in",
+        "output": "rhs_continue_and.out"
+      }
+    ]
+  },
+  {
+    "source": "rhs_break_or.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "rhs_break_or.in",
+        "output": "rhs_break_or.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_trace.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "nested_trace.in",
+        "output": "nested_trace.out"
+      }
+    ]
+  },
+  {
+    "source": "deep_rhs.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "deep_rhs.in",
+        "output": "deep_rhs.out"
+      }
+    ]
+  }
+]

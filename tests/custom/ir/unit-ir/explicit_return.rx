@@ -1,0 +1,12 @@
+fn return_assignment(p: &mut i32) { return *p = 17; }
+
+fn explicit_return() -> i32 {
+    let mut n: i32 = 0;
+    let a: () = return_assignment(&mut n);
+    n
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(explicit_return() as i32); remaining -= 1; }
+}

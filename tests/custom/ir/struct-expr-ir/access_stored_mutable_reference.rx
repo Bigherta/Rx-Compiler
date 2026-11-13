@@ -1,0 +1,8 @@
+struct Ref { r: &mut i32, tag: i32 }
+
+fn subject() -> i32 { let mut x: i32 = 17; let p: Ref = Ref { r: &mut x, tag: 3 }; *p.r += 8; x }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

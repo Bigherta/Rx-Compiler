@@ -660,6 +660,7 @@ public:
   CrateNode(const position &pos) : ASTNode(pos) { kind = nodeKind::Crate; }
 };
 struct LocalSymbol;
+struct FunctionSymbol;
 struct SelfParam {
   bool isRef;
   bool isMut;
@@ -674,6 +675,8 @@ struct FunctionParam {
 class FunctionDeclItemNode : public ItemNode {
 public:
   virtual std::any accept(ASTVisitor *visitor) override;
+  // Non-owning; the semantic symbol table owns the function symbol.
+  const FunctionSymbol *functionSymbol = nullptr;
   std::string identifier;
   GenericArgs args;
   std::optional<std::unique_ptr<TypeNode>> returnType;

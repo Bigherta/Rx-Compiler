@@ -1,0 +1,9 @@
+struct Inner { a: bool, b: bool, value: i32 }
+struct Outer { first: bool, inner: Inner, last: bool }
+
+fn subject() -> i32 { let b: Box<Outer> = Box::<Outer>::new(Outer { first: false, inner: Inner { a: true, b: false, value: 19 }, last: true }); (*b).inner.value + ((*b).last as i32) }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

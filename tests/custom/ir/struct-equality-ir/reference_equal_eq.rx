@@ -1,0 +1,10 @@
+#[derive(PartialEq)]
+struct Indirect { value: &i32, tail: bool }
+fn subject(a: &Indirect, b: &Indirect) -> i32 { (a == b) as i32 }
+fn main() {
+let mut fixture_2: i32 = (17 as i32);
+let mut left: Indirect = Indirect { value: &fixture_2, tail: true };
+let mut fixture_6: i32 = (17 as i32);
+let mut right: Indirect = Indirect { value: &fixture_6, tail: true };
+println_i32(subject(&left, &right));
+}

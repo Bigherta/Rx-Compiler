@@ -1,0 +1,9 @@
+struct Target { value: i32 }
+#[derive(Clone)]
+struct View { target: &Target }
+fn subject() -> i32 { let t: Target = Target { value: 17 }; let p: View = View { target: &t }; let q: View = p.clone(); q.target.value }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

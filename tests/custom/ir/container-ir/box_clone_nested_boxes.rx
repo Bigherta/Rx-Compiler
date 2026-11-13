@@ -1,0 +1,6 @@
+fn subject() -> i32 { let a: Box<Box<i32>> = Box::<Box<i32>>::new(Box::<i32>::new(17)); let mut b: Box<Box<i32>> = Box::<Box<i32>>::clone(&a); **b = 29; **a * 100 + **b }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

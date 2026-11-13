@@ -1,0 +1,5 @@
+fn cast_chain(a: bool) -> usize { a as i32 as u32 as usize }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(cast_chain((get_i32() != 0)) as i32); remaining -= 1; }
+}

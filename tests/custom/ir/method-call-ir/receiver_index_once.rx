@@ -1,0 +1,11 @@
+#[derive(Copy, Clone)]
+struct Cell { value: i32 }
+
+impl Cell { fn read(&self) -> i32 { self.value } }
+
+fn subject() -> i32 { let mut n: i32 = 0; let a: [Cell; 2] = [Cell { value: 7 }, Cell { value: 17 }]; let v: i32 = a[{ n += 1; 1 }].read(); n * 100 + v }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

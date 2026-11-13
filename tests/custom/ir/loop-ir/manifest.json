@@ -1,0 +1,134 @@
+[
+  {
+    "source": "continue_in_break_value.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "continue_in_break_value.in",
+        "output": "continue_in_break_value.out"
+      }
+    ]
+  },
+  {
+    "source": "mixed_break_return_continue.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "mixed_break_return_continue.in",
+        "output": "mixed_break_return_continue.out"
+      }
+    ]
+  },
+  {
+    "source": "break_in_break_value.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "break_in_break_value.in",
+        "output": "break_in_break_value.out"
+      }
+    ]
+  },
+  {
+    "source": "partial_break_in_value.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "partial_break_in_value.in",
+        "output": "partial_break_in_value.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_multi_exit.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "nested_multi_exit.in",
+        "output": "nested_multi_exit.out"
+      }
+    ]
+  },
+  {
+    "source": "while_break_isolation.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "while_break_isolation.in",
+        "output": "while_break_isolation.out"
+      }
+    ]
+  },
+  {
+    "source": "shared_reference_coercion.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "shared_reference_coercion.in",
+        "output": "shared_reference_coercion.out"
+      }
+    ]
+  },
+  {
+    "source": "array_break.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "array_break.in",
+        "output": "array_break.out"
+      }
+    ]
+  },
+  {
+    "source": "empty_array_break.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "empty_array_break.in",
+        "output": "empty_array_break.out"
+      }
+    ]
+  },
+  {
+    "source": "deep_value_nesting.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "deep_value_nesting.in",
+        "output": "deep_value_nesting.out"
+      }
+    ]
+  },
+  {
+    "source": "many_value_loops.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "many_value_loops.in",
+        "output": "many_value_loops.out"
+      }
+    ]
+  },
+  {
+    "source": "infinite_continue.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "infinite_continue.out"
+      }
+    ]
+  }
+]

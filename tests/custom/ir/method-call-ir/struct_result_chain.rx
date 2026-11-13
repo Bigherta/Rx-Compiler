@@ -1,0 +1,11 @@
+#[derive(Copy, Clone)]
+struct Cell { value: i32 }
+
+impl Cell { fn next(self) -> Self { Self { value: self.value + 1 } } fn read(&self) -> i32 { self.value } }
+
+fn subject() -> i32 { (Cell { value: 7 }).next().next().read() }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

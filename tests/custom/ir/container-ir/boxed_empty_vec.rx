@@ -1,0 +1,6 @@
+fn subject() -> i32 { let b: Box<Vec<i32>> = Box::<Vec<i32>>::new(Vec::<i32>::new()); (*b).len() as i32 + (((*b).is_empty() as i32) * 10) }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

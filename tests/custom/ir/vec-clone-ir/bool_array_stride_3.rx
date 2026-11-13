@@ -1,0 +1,39 @@
+fn subject(v: &Vec<[bool; 3]>) -> Vec<[bool; 3]> { v.clone() }
+fn main() {
+let mut fixture_1 = Vec::<[bool; 3]>::new();
+fixture_1.push([true, false, true]);
+fixture_1.push([false, true, false]);
+fixture_1.push([true, true, false]);
+let mut original: Vec<[bool; 3]> = fixture_1;
+let mut counter: i32 = 0;
+let mut cloned = subject(&original);
+println_i32((cloned).len() as i32);
+println_i32((((cloned)[0])[0]) as i32);
+((cloned)[0])[0] = !(((cloned)[0])[0]);
+println_i32((((cloned)[0])[1]) as i32);
+((cloned)[0])[1] = !(((cloned)[0])[1]);
+println_i32((((cloned)[0])[2]) as i32);
+((cloned)[0])[2] = !(((cloned)[0])[2]);
+println_i32((((cloned)[1])[0]) as i32);
+((cloned)[1])[0] = !(((cloned)[1])[0]);
+println_i32((((cloned)[1])[1]) as i32);
+((cloned)[1])[1] = !(((cloned)[1])[1]);
+println_i32((((cloned)[1])[2]) as i32);
+((cloned)[1])[2] = !(((cloned)[1])[2]);
+println_i32((((cloned)[2])[0]) as i32);
+((cloned)[2])[0] = !(((cloned)[2])[0]);
+println_i32((((cloned)[2])[1]) as i32);
+((cloned)[2])[1] = !(((cloned)[2])[1]);
+println_i32((((cloned)[2])[2]) as i32);
+((cloned)[2])[2] = !(((cloned)[2])[2]);
+println_i32((original).len() as i32);
+println_i32((((original)[0])[0]) as i32);
+println_i32((((original)[0])[1]) as i32);
+println_i32((((original)[0])[2]) as i32);
+println_i32((((original)[1])[0]) as i32);
+println_i32((((original)[1])[1]) as i32);
+println_i32((((original)[1])[2]) as i32);
+println_i32((((original)[2])[0]) as i32);
+println_i32((((original)[2])[1]) as i32);
+println_i32((((original)[2])[2]) as i32);
+}

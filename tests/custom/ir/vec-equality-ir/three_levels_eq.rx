@@ -1,0 +1,34 @@
+fn subject(a: &Vec<Vec<Vec<i32>>>, b: &Vec<Vec<Vec<i32>>>) -> i32 { (a == b) as i32 }
+fn main() {
+let mut fixture_1 = Vec::<Vec<Vec<i32>>>::new();
+let mut fixture_2 = Vec::<Vec<i32>>::new();
+let mut fixture_3 = Vec::<i32>::new();
+fixture_3.push((3 as i32));
+fixture_3.push((5 as i32));
+fixture_2.push(fixture_3);
+let mut fixture_6 = Vec::<i32>::new();
+fixture_2.push(fixture_6);
+let mut fixture_7 = Vec::<i32>::new();
+fixture_7.push((8 as i32));
+fixture_7.push((13 as i32));
+fixture_7.push((21 as i32));
+fixture_2.push(fixture_7);
+fixture_1.push(fixture_2);
+let mut left: Vec<Vec<Vec<i32>>> = fixture_1;
+let mut fixture_11 = Vec::<Vec<Vec<i32>>>::new();
+let mut fixture_12 = Vec::<Vec<i32>>::new();
+let mut fixture_13 = Vec::<i32>::new();
+fixture_13.push((3 as i32));
+fixture_13.push((5 as i32));
+fixture_12.push(fixture_13);
+let mut fixture_16 = Vec::<i32>::new();
+fixture_12.push(fixture_16);
+let mut fixture_17 = Vec::<i32>::new();
+fixture_17.push((8 as i32));
+fixture_17.push((13 as i32));
+fixture_17.push((21 as i32));
+fixture_12.push(fixture_17);
+fixture_11.push(fixture_12);
+let mut right: Vec<Vec<Vec<i32>>> = fixture_11;
+println_i32(subject(&left, &right));
+}

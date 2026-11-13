@@ -1,0 +1,5 @@
+fn subject() -> [i32; 0] { [] }
+fn main() {
+
+let value = subject();
+}

@@ -1,0 +1,9 @@
+fn record(trace: &mut i32, digit: i32, value: bool) -> bool {
+    *trace = *trace * 10 + digit;
+    value
+}
+fn guard_division_and(a: bool, divisor: i32) -> i32 { (a && (12 / divisor > 0)) as i32 }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(guard_division_and((get_i32() != 0), (get_i32() as i32)) as i32); remaining -= 1; }
+}

@@ -1,0 +1,10 @@
+#[derive(Copy, Clone)]
+struct Pair { x: i32, y: i32 }
+fn update(mut p: Pair) -> Pair { p.x = 17; p }
+
+fn subject() -> i32 { let p: Pair = Pair { x: 3, y: 5 }; let q: Pair = update(p); p.x * 100 + q.x }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

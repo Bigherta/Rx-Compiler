@@ -1,0 +1,134 @@
+[
+  {
+    "source": "chain_four.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "chain_four.in",
+        "output": "chain_four.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_condition.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "nested_condition.in",
+        "output": "nested_condition.out"
+      }
+    ]
+  },
+  {
+    "source": "logic_branches.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "logic_branches.in",
+        "output": "logic_branches.out"
+      }
+    ]
+  },
+  {
+    "source": "then_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "then_return.in",
+        "output": "then_return.out"
+      }
+    ]
+  },
+  {
+    "source": "else_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "else_return.in",
+        "output": "else_return.out"
+      }
+    ]
+  },
+  {
+    "source": "both_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "both_return.in",
+        "output": "both_return.out"
+      }
+    ]
+  },
+  {
+    "source": "chain_condition_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "chain_condition_return.in",
+        "output": "chain_condition_return.out"
+      }
+    ]
+  },
+  {
+    "source": "continue_branch.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "continue_branch.in",
+        "output": "continue_branch.out"
+      }
+    ]
+  },
+  {
+    "source": "mut_reference.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "mut_reference.in",
+        "output": "mut_reference.out"
+      }
+    ]
+  },
+  {
+    "source": "shared_coercion.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "shared_coercion.in",
+        "output": "shared_coercion.out"
+      }
+    ]
+  },
+  {
+    "source": "array.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "array.in",
+        "output": "array.out"
+      }
+    ]
+  },
+  {
+    "source": "empty_array.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "empty_array.in",
+        "output": "empty_array.out"
+      }
+    ]
+  }
+]

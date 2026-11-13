@@ -1,0 +1,14 @@
+fn combine(a: i32, b: i32, c: i32) -> i32 { a * 100 + b * 10 + c }
+fn record(trace: &mut i32, digit: i32, result: bool) -> bool {
+    *trace = *trace * 10 + digit;
+    result
+}
+fn unit_exit(flag: bool, n: &mut i32) {
+    if flag { *n = 11; return; } else { *n = 22; return (); }
+    *n = 99;
+}
+fn dereference_end() -> i32 { let n: i32 = 0; *{ return 31; &n } }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(dereference_end() as i32); remaining -= 1; }
+}

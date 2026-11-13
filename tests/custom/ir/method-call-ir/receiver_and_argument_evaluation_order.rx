@@ -1,0 +1,13 @@
+#[derive(Copy, Clone)]
+struct Cell { value: i32 }
+
+impl Cell { fn combine(&self, a: i32, b: i32) -> i32 { self.value * 100 + a * 10 + b } }
+fn make(p: &mut i32) -> Cell { *p = *p * 10 + 1; Cell { value: 7 } }
+fn mark(p: &mut i32, n: i32) -> i32 { *p = *p * 10 + n; n }
+
+fn subject() -> i32 { let mut n: i32 = 0; let v: i32 = make(&mut n).combine(mark(&mut n, 2), mark(&mut n, 3)); n * 10000 + v }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

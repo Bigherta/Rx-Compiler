@@ -5,6 +5,7 @@
 #include "SymbolCollector.hpp"
 #include <any>
 #include <cstddef>
+#include <deque>
 #include <memory>
 #include <optional>
 #include <string>
@@ -55,8 +56,22 @@ struct TypeModule : public Module {
       innerType = nullptr;
     }
   }
+  TypeModule &operator=(const TypeModule &other) {
+    if (&other != this) {
+      kind = other.kind;
+      isSigned = other.isSigned;
+      length = other.length;
+      structName = other.structName;
+      if (other.innerType) {
+        innerType = std::make_unique<TypeModule>(*other.innerType);
+      } else {
+        innerType = nullptr;
+      }
+    }
+    return *(this);
+  }
   std::any accept(IRVisitor *visitor) override;
-  static TypeModule lowerType(const Type *typePtr) {
+  static TypeModule lowerType(const Type *typePtr, bool isReturnType) {
     switch (typePtr->kind) {
     case TypeKind::I32: {
       auto type = TypeModule(llvmTypeKind::I32);
@@ -82,9 +97,14 @@ struct TypeModule : public Module {
       return TypeModule(llvmTypeKind::I8);
     }
     case TypeKind::Unit: {
-      auto type = TypeModule(llvmTypeKind::Struct);
-      type.structName.emplace("builtin_Unit");
-      return type;
+      if (!isReturnType) {
+        auto type = TypeModule(llvmTypeKind::Struct);
+        type.structName.emplace("builtin_Unit");
+        return type;
+      } else {
+        auto type = TypeModule(llvmTypeKind::Void);
+        return type;
+      }
     }
     case TypeKind::MutReference:
     case TypeKind::ImmutReference: {
@@ -101,8 +121,8 @@ struct TypeModule : public Module {
     case TypeKind::Array: {
       auto type = TypeModule(llvmTypeKind::Array);
       type.length = std::get<long long>(typePtr->arrayLen.value().value);
-      type.innerType =
-          std::make_unique<TypeModule>(lowerType(typePtr->elementType.get()));
+      type.innerType = std::make_unique<TypeModule>(
+          lowerType(typePtr->elementType.get(), false));
       return type;
     }
     case TypeKind::Struct: {
@@ -124,8 +144,8 @@ struct StructModule : public Module {
     structName = symbol->name;
     for (const auto &fieldName : symbol->layoutFields) {
       const auto &fieldType = symbol->structFields.at(fieldName);
-      fields.emplace_back(
-          std::make_unique<TypeModule>(TypeModule::lowerType(&fieldType)));
+      fields.emplace_back(std::make_unique<TypeModule>(
+          TypeModule::lowerType(&fieldType, false)));
     }
   }
   std::any accept(IRVisitor *visitor) override;
@@ -140,19 +160,38 @@ struct Operand {
       SSAName = name;
       return *this;
     }
+    SSA(const Operand &operand) { *this = std::get<SSA>(operand.operand); }
   };
   struct Immediate {
     std::variant<long long, bool> constValue;
+    Immediate(long long value) : constValue(value) {}
+    Immediate(std::variant<long long, bool> &&value) : constValue(value) {}
   };
-  std::variant<SSA, Immediate> operand;
+  struct Unit {};
+  std::variant<SSA, Immediate, Unit> operand;
+  Operand(long long value) : operand(Immediate(value)) {}
   Operand(const SSA &ssa) : operand(ssa) {};
   Operand(const Immediate &immediate) : operand(immediate) {};
+  Operand(Unit unit) : operand(unit) {};
   std::any accept(IRVisitor *visitor);
 };
 
 struct Instruction {
   virtual ~Instruction() = default;
   virtual std::any accept(IRVisitor *visitor) = 0;
+};
+
+struct BasicBlock;
+
+struct PhiInst : public Instruction {
+  std::unique_ptr<TypeModule> type;
+  Operand::SSA resultSSA;
+  std::vector<std::pair<Operand, BasicBlock *>> incoming;
+  PhiInst(const Operand::SSA &result, std::unique_ptr<TypeModule> &&type,
+          std::vector<std::pair<Operand, BasicBlock *>> &&incoming)
+      : type(std::move(type)), resultSSA(result),
+        incoming(std::move(incoming)) {}
+  std::any accept(IRVisitor *visitor) override;
 };
 
 struct AllocaInst : public Instruction {
@@ -204,6 +243,11 @@ struct BinaryInst : public Instruction {
   Operand leftChild;
   Operand rightChild;
   Operand::SSA resultPtr;
+  explicit BinaryInst(BinaryIntergerOperator kind,
+                      std::unique_ptr<TypeModule> &&type, const Operand &left,
+                      const Operand &right, const Operand::SSA &storePtr)
+      : opKind(kind), type(std::move(type)), leftChild(left), rightChild(right),
+        resultPtr(storePtr) {}
   std::any accept(IRVisitor *visitor) override;
 };
 enum class ICmpOperator {
@@ -224,6 +268,11 @@ struct ICmpInst : public Instruction {
   Operand leftChild;
   Operand rightChild;
   Operand::SSA resultPtr;
+  explicit ICmpInst(ICmpOperator kind, std::unique_ptr<TypeModule> &&type,
+                    const Operand &left, const Operand &right,
+                    const Operand::SSA &storePtr)
+      : opKind(kind), cmpType(std::move(type)), leftChild(left),
+        rightChild(right), resultPtr(storePtr) {}
   std::any accept(IRVisitor *visitor) override;
 };
 enum class CastOperator {
@@ -237,6 +286,11 @@ struct CastInst : public Instruction {
   std::unique_ptr<TypeModule> toType;
   Operand castObj;
   Operand::SSA resultPtr;
+  explicit CastInst(CastOperator kind, std::unique_ptr<TypeModule> &&from,
+                    std::unique_ptr<TypeModule> &&to, const Operand &object,
+                    const Operand::SSA &ssa)
+      : opKind(kind), fromType(std::move(from)), toType(std::move(to)),
+        castObj(object), resultPtr(ssa) {}
   std::any accept(IRVisitor *visitor) override;
 };
 
@@ -244,7 +298,18 @@ struct CallInst : public Instruction {
   std::unique_ptr<TypeModule> resultType;
   std::optional<Operand::SSA> resultPtr;
   std::string calleeName;
-  std::vector<std::pair<std::unique_ptr<TypeModule>, Operand::SSA>> paramTypes;
+  std::vector<std::pair<std::unique_ptr<TypeModule>, Operand>> params;
+  explicit CallInst(
+      std::unique_ptr<TypeModule> &&resultType, const Operand::SSA &resultPtr,
+      const std::string &calleeName,
+      std::vector<std::pair<std::unique_ptr<TypeModule>, Operand>> &&params)
+      : resultType(std::move(resultType)), resultPtr(resultPtr),
+        calleeName(calleeName), params(std::move(params)) {}
+  explicit CallInst(
+      std::unique_ptr<TypeModule> &&resultType, const std::string &calleeName,
+      std::vector<std::pair<std::unique_ptr<TypeModule>, Operand>> &&params)
+      : resultType(std::move(resultType)), resultPtr(std::nullopt),
+        calleeName(calleeName), params(std::move(params)) {}
   std::any accept(IRVisitor *visitor) override;
 };
 
@@ -252,16 +317,11 @@ struct GEPInst : public Instruction {
   Operand::SSA resultPtr;
   std::unique_ptr<TypeModule> getObjType;
   Operand::SSA initialPtr;
-  Operand indexZero;
   std::vector<Operand> indexOfElements;
-  std::any accept(IRVisitor *visitor) override;
-};
-
-struct ExtractvalueInst : public Instruction {
-  Operand::SSA resultPtr;
-  std::unique_ptr<TypeModule> aggregateType;
-  Operand::SSA aggregatePtr;
-  std::vector<Operand> indexOfElements;
+  GEPInst(const Operand::SSA &result, std::unique_ptr<TypeModule> &&objectType,
+          const Operand::SSA &initial, std::vector<Operand> &&indices)
+      : resultPtr(result), getObjType(std::move(objectType)),
+        initialPtr(initial), indexOfElements(std::move(indices)) {}
   std::any accept(IRVisitor *visitor) override;
 };
 
@@ -271,7 +331,30 @@ struct InsertvalueInst : public Instruction {
   Operand::SSA aggregatePtr;
   std::unique_ptr<TypeModule> newElementType;
   Operand newElementValue;
-  std::vector<Operand> indexOfElements;
+  std::vector<std::size_t> indexOfElements;
+  InsertvalueInst(const Operand::SSA &result,
+                  std::unique_ptr<TypeModule> &&aggregate,
+                  const Operand::SSA &aggregateValue,
+                  std::unique_ptr<TypeModule> &&elementType,
+                  const Operand &elementValue,
+                  std::vector<std::size_t> &&indices)
+      : resultPtr(result), aggregateType(std::move(aggregate)),
+        aggregatePtr(aggregateValue), newElementType(std::move(elementType)),
+        newElementValue(elementValue), indexOfElements(std::move(indices)) {}
+  std::any accept(IRVisitor *visitor) override;
+};
+
+struct ExtractvalueInst : public Instruction {
+  Operand::SSA resultPtr;
+  std::unique_ptr<TypeModule> aggregateType;
+  Operand aggregateValue;
+  std::vector<std::size_t> indexOfElements;
+  ExtractvalueInst(const Operand::SSA &result,
+                   std::unique_ptr<TypeModule> &&aggregate,
+                   const Operand &aggregateValue,
+                   std::vector<std::size_t> &&indices)
+      : resultPtr(result), aggregateType(std::move(aggregate)),
+        aggregateValue(aggregateValue), indexOfElements(std::move(indices)) {}
   std::any accept(IRVisitor *visitor) override;
 };
 
@@ -281,19 +364,26 @@ struct Terminator : Instruction {
 
 struct BasicBlock {
   std::string blockName;
+  std::vector<std::unique_ptr<PhiInst>> phis;
   std::vector<std::unique_ptr<Instruction>> insts;
   std::unique_ptr<Terminator> terminator;
+  explicit BasicBlock(const std::string &name) : blockName(name) {}
   std::any accept(IRVisitor *visitor);
 };
 
 struct BrInst : Terminator {
   BasicBlock *jumpTarget;
+  explicit BrInst(BasicBlock *jumpTarget) : jumpTarget(jumpTarget) {}
+  std::any accept(IRVisitor *visitor) override;
 };
 
 struct CondInst : Terminator {
   Operand cond;
   BasicBlock *trueTarget;
   BasicBlock *falseTarget;
+  CondInst(const Operand &cond, BasicBlock *trueTarget, BasicBlock *falseTarget)
+      : cond(cond), trueTarget(trueTarget), falseTarget(falseTarget) {}
+  std::any accept(IRVisitor *visitor) override;
 };
 
 struct ReturnInst : Terminator {
@@ -312,11 +402,25 @@ enum class functionState {
   Defined,
 };
 struct FunctionModule : public Module {
+  FunctionSymbol *symbol = nullptr;
   functionState state;
   std::string functionName;
   std::unique_ptr<TypeModule> returnType;
   std::vector<std::pair<std::unique_ptr<TypeModule>, Operand::SSA>> paramTypes;
-  std::vector<std::unique_ptr<BasicBlock>> basicBlocks;
+  std::unordered_map<std::string, std::unique_ptr<BasicBlock>> basicBlocks;
+  BasicBlock *entry = nullptr;
+  FunctionModule(FunctionSymbol *symbol)
+      : symbol(symbol), state(functionState::Declared),
+        functionName(symbol->mangledName),
+        returnType(std::make_unique<TypeModule>(
+            TypeModule::lowerType(&symbol->returnType, true))) {
+    paramTypes.reserve(symbol->paramTypes.size());
+    for (const auto &type : symbol->paramTypes) {
+      paramTypes.emplace_back(
+          std::make_unique<TypeModule>(TypeModule::lowerType(&type, false)),
+          Operand::SSA{});
+    }
+  }
   FunctionModule(
       functionState state, const std::string &funcName,
       std::unique_ptr<TypeModule> &&returnType,
@@ -331,15 +435,24 @@ struct IRModules : public Module {
   std::string targetTriple = "riscv32-unknown-elf";
   std::string dataLayout = "e-m:e-p:32:32-i64:64-n32-S128";
   std::vector<std::unique_ptr<StructModule>> structs;
+  std::unordered_map<std::string, StructModule *> structModuleMap;
   std::vector<std::unique_ptr<FunctionModule>> functions;
-  std::unordered_map<const FunctionDeclItemNode *, FunctionModule *>
+  std::unordered_map<const FunctionSymbol *, FunctionModule *>
       functionModuleMap;
+  const SemanticAnalyzer *analyzer;
   std::any accept(IRVisitor *visitor) override;
-  IRModules() {
+  IRModules(const SemanticAnalyzer *analyzer) : analyzer(analyzer) {
+    auto registerExternalFunction = [&](const std::string &name) {
+      auto *symbol = analyzer->builtinFunctions.at(name).get();
+      auto *module = functions.back().get();
+      module->symbol = symbol;
+      functionModuleMap.emplace(symbol, module);
+    };
     functions.emplace_back(std::make_unique<FunctionModule>(
         functionState::Declared, "get_i32",
         std::make_unique<TypeModule>(llvmTypeKind::I32),
         std::vector<std::pair<std::unique_ptr<TypeModule>, Operand::SSA>>()));
+    registerExternalFunction("get_i32");
 
     std::vector<std::pair<std::unique_ptr<TypeModule>, Operand::SSA>>
         printParams;
@@ -349,6 +462,7 @@ struct IRModules : public Module {
         functionState::Declared, "print_i32",
         std::make_unique<TypeModule>(llvmTypeKind::Void),
         std::move(printParams)));
+    registerExternalFunction("print_i32");
 
     std::vector<std::pair<std::unique_ptr<TypeModule>, Operand::SSA>>
         printlnParams;
@@ -358,6 +472,7 @@ struct IRModules : public Module {
         functionState::Declared, "println_i32",
         std::make_unique<TypeModule>(llvmTypeKind::Void),
         std::move(printlnParams)));
+    registerExternalFunction("println_i32");
 
     std::vector<std::pair<std::unique_ptr<TypeModule>, Operand::SSA>>
         allocParams;
@@ -373,6 +488,7 @@ struct IRModules : public Module {
     auto builtinUnitStruct = std::make_unique<StructModule>();
     builtinUnitStruct->structName = "builtin_Unit";
     structs.emplace_back(std::move(builtinUnitStruct));
+    structModuleMap.emplace(structs.back()->structName, structs.back().get());
     auto builtinVecStruct = std::make_unique<StructModule>();
     builtinVecStruct->structName = "builtin_Vec";
     builtinVecStruct->fields.emplace_back(
@@ -382,8 +498,10 @@ struct IRModules : public Module {
     builtinVecStruct->fields.emplace_back(
         std::make_unique<TypeModule>(llvmTypeKind::I32));
     structs.emplace_back(std::move(builtinVecStruct));
+    structModuleMap.emplace(structs.back()->structName, structs.back().get());
+    addRxItems(analyzer);
   }
-  void addRxItems(const SemanticAnalyzer &);
+  void addRxItems(const SemanticAnalyzer *);
 };
 
 enum class SSAType {
@@ -391,12 +509,12 @@ enum class SSAType {
   Addr,
 };
 
-struct FunctionNamespaceGuard {
+struct FunctionConstextRecord {
   std::size_t addrCounter = 0;
   std::size_t valueCounter = 0;
   std::size_t basicBlockCounter = 0;
   std::unordered_map<const LocalSymbol *, Operand::SSA> localAddressMap;
-  FunctionNamespaceGuard() = default;
+  FunctionConstextRecord() = default;
   Operand::SSA makeSSA(const std::string &name, SSAType kind) {
     const bool isAddress = kind == SSAType::Addr;
     auto &counter = isAddress ? addrCounter : valueCounter;
@@ -409,7 +527,7 @@ struct FunctionNamespaceGuard {
     return Operand::SSA{"__" + std::to_string(counter++) +
                         (isAddress ? ".addr" : ".value")};
   }
-  std::string generateBasicBlockName(){
+  std::string generateBasicBlockName() {
     return "BasicBlock." + std::to_string(basicBlockCounter++);
   }
   void clear() {
@@ -420,15 +538,47 @@ struct FunctionNamespaceGuard {
   }
 };
 
+struct LoopContextRecord {
+  BasicBlock *continueTarget = nullptr;
+  BasicBlock *breakTarget = nullptr;
+  std::optional<std::vector<std::pair<Operand, BasicBlock *>>> phiBlocks{};
+  bool willExit = false;
+};
+
+struct TypeLayout {
+  std::size_t size;
+  std::size_t alignment;
+};
 class IRGenerator : public ASTBaseVisitor {
 private:
   IRModules *modules = nullptr;
-  FunctionNamespaceGuard guard;
+  FunctionConstextRecord guard;
   BasicBlock *currentBlock = nullptr;
-  Operand emitValue(ExprNode *);
+  FunctionModule *currentFunction = nullptr;
+  std::deque<LoopContextRecord> loopContext;
+  std::deque<FunctionModule *> pendingBuiltinFunctions;
+  std::unordered_map<std::string, const Type &> pendingEqualFunctions;
+  FunctionModule *getOrCreateFunction(FunctionSymbol *symbol);
+  void beginFunction(FunctionModule *module,
+                     const std::vector<std::string> &parameterNames);
+  std::optional<Operand> emitValue(ExprNode *);
+  std::optional<Operand> emitPlace(ExprNode *);
+  Operand::SSA emitAlloc(const Operand &size, const Operand &alignment);
+  Operand::SSA emitVecPtr(const Operand::SSA &self);
+  Operand::SSA emitVecLength(const Operand::SSA &self);
+  Operand::SSA emitVecCapacity(const Operand::SSA &self);
+  void emitEqualFunction(const std::string &, const Type &);
+  void registerEqualFunction(const std::string &, const Type &);
+  bool generateIfExpr(IfExprNode *, BasicBlock *, const Operand &,
+                      std::vector<std::pair<Operand, BasicBlock *>> *);
+  TypeLayout layout(const TypeModule &type);
 
 public:
   explicit IRGenerator(IRModules &modules) : modules(&modules) {}
+
+  void generateBuiltinFunctions();
+
+  void generateEqualFunctions();
 
   // Crate and attribute.
   std::any visitCrate(CrateNode *node) override;
@@ -467,8 +617,6 @@ public:
   std::any visitDereferenceExpr(DereferenceExprNode *node) override;
 
   std::any visitAssignmentExpr(AssignmentExprNode *node) override;
-
-  std::any visitMagnitudeExpr(MagnitudeExprNode *node) override;
 
   std::any visitConstExpr(ConstExprNode *node) override;
 

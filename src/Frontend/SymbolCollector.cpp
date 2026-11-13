@@ -140,7 +140,6 @@ std::any SymbolCollector::visitFunctionDeclItem(FunctionDeclItemNode *node) {
   }
   FunctionSymbol func(node->identifier);
   func.pos = node->pos;
-  func.declaration = node;
   if (node->returnType != std::nullopt) {
     func.returnType =
         std::any_cast<Type>(node->returnType->get()->accept(this));
@@ -233,7 +232,6 @@ std::any SymbolCollector::visitStructDeclItem(StructDeclItemNode *node) {
                                  node->identifier + "`");
       return {};
     }
-    structSymbol.layoutFields.emplace_back(field.identifier);
     auto fieldType = std::any_cast<Type>(field.fieldType->accept(this));
     auto dependency = checkDependency(fieldType);
     if (dependency) {
@@ -247,6 +245,9 @@ std::any SymbolCollector::visitStructDeclItem(StructDeclItemNode *node) {
         return {};
       }
     }
+    structSymbol.fieldIndices.emplace(field.identifier,
+                                      structSymbol.layoutFields.size());
+    structSymbol.layoutFields.emplace_back(field.identifier);
     structSymbol.structFields.emplace(field.identifier, fieldType);
   }
   table.typeNameSpace.emplace(node->identifier, std::make_unique<StructSymbol>(
@@ -309,8 +310,9 @@ std::any SymbolCollector::visitImplDeclItem(ImplDeclItemNode *node) {
         return {};
       }
       FunctionSymbol func(functionNode->identifier);
+      func.mangledName = "_" + std::to_string(func.name.size()) + "_" + impl.name +
+                         "_" + func.name;
       func.pos = functionNode->pos;
-      func.declaration = functionNode.get();
       if (functionNode->returnType != std::nullopt) {
         func.returnType =
             std::any_cast<Type>(functionNode->returnType->get()->accept(this));

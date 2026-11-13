@@ -1,0 +1,8 @@
+struct Odd { z: i32, a: i32, m: i32 }
+
+fn subject() -> i32 { let p: Odd = Odd { a: 2, m: 3, z: 1 }; p.z * 100 + p.a * 10 + p.m }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

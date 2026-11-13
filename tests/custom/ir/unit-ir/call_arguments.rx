@@ -1,0 +1,19 @@
+fn bump(p: &mut i32) { *p += 1; }
+
+fn consume(u: (), p: &mut i32) {
+    let copy: () = u;
+    *p += 1;
+}
+
+fn call_arguments() -> i32 {
+    let mut n: i32 = 0;
+    consume(bump(&mut n), &mut n);
+    consume(n += 4, &mut n);
+    consume({}, &mut n);
+    n
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(call_arguments() as i32); remaining -= 1; }
+}

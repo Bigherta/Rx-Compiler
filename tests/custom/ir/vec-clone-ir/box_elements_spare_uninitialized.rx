@@ -1,0 +1,17 @@
+fn subject(v: &Vec<Box<i32>>) -> Vec<Box<i32>> { v.clone() }
+fn main() {
+let mut fixture_1 = Vec::<Box<i32>>::new();
+fixture_1.push(Box::<i32>::new((17 as i32)));
+fixture_1.push(Box::<i32>::new((-29 as i32)));
+let mut original: Vec<Box<i32>> = fixture_1;
+let mut counter: i32 = 0;
+let mut cloned = subject(&original);
+println_i32((cloned).len() as i32);
+println_i32(((*((cloned)[0]))) as i32);
+(*((cloned)[0])) = !((*((cloned)[0])));
+println_i32(((*((cloned)[1]))) as i32);
+(*((cloned)[1])) = !((*((cloned)[1])));
+println_i32((original).len() as i32);
+println_i32(((*((original)[0]))) as i32);
+println_i32(((*((original)[1]))) as i32);
+}

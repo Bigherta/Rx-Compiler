@@ -1,0 +1,112 @@
+[
+  {
+    "source": "box_new_bool.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_new_bool.out"
+      }
+    ]
+  },
+  {
+    "source": "box_new_array_field_layout.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_new_array_field_layout.out"
+      }
+    ]
+  },
+  {
+    "source": "box_new_nested_layout.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_new_nested_layout.out"
+      }
+    ]
+  },
+  {
+    "source": "box_new_mutable_reference.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_new_mutable_reference.out"
+      }
+    ]
+  },
+  {
+    "source": "box_new_argument_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_new_argument_once.out"
+      }
+    ]
+  },
+  {
+    "source": "box_clone_nested_boxes.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_clone_nested_boxes.out"
+      }
+    ]
+  },
+  {
+    "source": "box_clone_struct_with_box.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_clone_struct_with_box.out"
+      }
+    ]
+  },
+  {
+    "source": "box_clone_shared_reference.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "box_clone_shared_reference.out"
+      }
+    ]
+  },
+  {
+    "source": "boxed_empty_vec.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "boxed_empty_vec.out"
+      }
+    ]
+  },
+  {
+    "source": "vec_by_value.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "vec_by_value.out"
+      }
+    ]
+  }
+]

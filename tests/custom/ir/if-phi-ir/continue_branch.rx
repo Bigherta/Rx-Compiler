@@ -1,0 +1,11 @@
+fn record(trace: &mut i32, digit: i32, value: bool) -> bool {
+    *trace = *trace * 10 + digit;
+    value
+}
+fn combine(a: i32, b: i32) -> i32 { a * 100 + b }
+fn consume(u: (), n: &mut i32) { *n += 100; }
+fn continue_branch() -> i32 { let mut n: i32 = 0; loop { n += 1; let value = if n < 3 { continue; } else { n }; break value; } }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(continue_branch() as i32); remaining -= 1; }
+}

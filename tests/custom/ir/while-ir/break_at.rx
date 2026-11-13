@@ -1,0 +1,15 @@
+fn break_at(limit: i32, stop: i32) -> i32 {
+    let mut i: i32 = 0;
+    let mut sum: i32 = 0;
+    while i < limit {
+        if i == stop { break; }
+        sum += i;
+        i += 1;
+    }
+    sum
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(break_at((get_i32() as i32), (get_i32() as i32)) as i32); remaining -= 1; }
+}

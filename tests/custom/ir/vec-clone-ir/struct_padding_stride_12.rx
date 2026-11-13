@@ -1,0 +1,32 @@
+#[derive(Clone)]
+struct Odd { flag: bool, value: i32, tail: bool }
+
+fn subject(v: &Vec<Odd>) -> Vec<Odd> { v.clone() }
+fn main() {
+let mut fixture_1 = Vec::<Odd>::new();
+fixture_1.push(Odd { flag: true, value: (17 as i32), tail: false });
+fixture_1.push(Odd { flag: false, value: (-29 as i32), tail: true });
+let mut original: Vec<Odd> = fixture_1;
+let mut counter: i32 = 0;
+let mut cloned = subject(&original);
+println_i32((cloned).len() as i32);
+println_i32((((cloned)[0]).flag) as i32);
+((cloned)[0]).flag = !(((cloned)[0]).flag);
+println_i32((((cloned)[0]).value) as i32);
+((cloned)[0]).value = !(((cloned)[0]).value);
+println_i32((((cloned)[0]).tail) as i32);
+((cloned)[0]).tail = !(((cloned)[0]).tail);
+println_i32((((cloned)[1]).flag) as i32);
+((cloned)[1]).flag = !(((cloned)[1]).flag);
+println_i32((((cloned)[1]).value) as i32);
+((cloned)[1]).value = !(((cloned)[1]).value);
+println_i32((((cloned)[1]).tail) as i32);
+((cloned)[1]).tail = !(((cloned)[1]).tail);
+println_i32((original).len() as i32);
+println_i32((((original)[0]).flag) as i32);
+println_i32((((original)[0]).value) as i32);
+println_i32((((original)[0]).tail) as i32);
+println_i32((((original)[1]).flag) as i32);
+println_i32((((original)[1]).value) as i32);
+println_i32((((original)[1]).tail) as i32);
+}

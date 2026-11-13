@@ -1,0 +1,6 @@
+fn subject(a: &[bool; 5], b: &[bool; 5]) -> i32 { (a == b) as i32 }
+fn main() {
+let mut left: [bool; 5] = [true, false, true, false, true];
+let mut right: [bool; 5] = [true, false, true, false, false];
+println_i32(subject(&left, &right));
+}

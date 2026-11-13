@@ -1,0 +1,34 @@
+fn main() {
+    let signed: i32 = -29;
+    let unsigned: u32 = 4294967293u32;
+    println_i32(signed + 7);
+    println_i32(signed - 7);
+    println_i32(signed * 7);
+    println_i32(signed / 7);
+    println_i32(signed % 7);
+    println_i32((unsigned / 3u32) as i32);
+    println_i32((unsigned % 3u32) as i32);
+    println_i32(6 & 3);
+    println_i32(6 | 3);
+    println_i32(6 ^ 3);
+    println_i32(!6);
+    println_i32(signed >> 2);
+    println_i32((unsigned >> 2) as i32);
+    println_i32(6 << 3);
+    println_i32((!true) as i32);
+    println_i32((!false) as i32);
+    println_i32((!!true) as i32);
+    println_i32((!!false) as i32);
+    let flag: bool = true;
+    println_i32((!flag) as i32);
+    println_i32(flag as i32);
+    println_i32((2147483648u32) as i32);
+    println_i32(((-1) as u32) as i32);
+    let signed_size: isize = -29isize;
+    let unsigned_size: usize = 4294967295usize;
+    println_i32((signed_size / 7isize) as i32);
+    println_i32((signed_size % 7isize) as i32);
+    println_i32((signed_size >> 2) as i32);
+    println_i32((unsigned_size / 3usize) as i32);
+    println_i32((unsigned_size >> 31) as i32);
+}

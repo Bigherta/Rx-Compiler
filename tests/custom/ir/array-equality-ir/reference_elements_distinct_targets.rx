@@ -1,0 +1,4 @@
+fn subject() -> i32 { let a: i32 = 17; let b: i32 = 29; let c: i32 = 17; let d: i32 = 29; ([&a, &b] == [&c, &d]) as i32 }
+fn main() {
+println_i32(subject());
+}

@@ -1,0 +1,5 @@
+fn not_bool(a: bool) -> bool { !a }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(not_bool((get_i32() != 0)) as i32); remaining -= 1; }
+}

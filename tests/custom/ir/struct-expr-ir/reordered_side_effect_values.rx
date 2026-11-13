@@ -1,0 +1,8 @@
+struct Pair { x: i32, y: i32 }
+fn subject() -> Pair { let mut n: i32 = 0; Pair { y: { n = n + 1; n }, x: { n = n + 1; n } } }
+fn main() {
+
+let value = subject();
+println_i32(value.x as i32);
+println_i32(value.y as i32);
+}

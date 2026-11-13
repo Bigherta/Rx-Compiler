@@ -1,0 +1,6 @@
+fn subject() -> i32 { let mut n: i32 = 0; let a: [i32; 3] = [{ n = n * 10 + 1; n }, { n = n * 10 + 2; n }, { n = n * 10 + 3; n }]; n }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

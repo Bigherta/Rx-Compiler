@@ -1,0 +1,222 @@
+[
+  {
+    "source": "list_empty.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "list_empty.out"
+      }
+    ]
+  },
+  {
+    "source": "list_dynamic.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "list_dynamic.out"
+      }
+    ]
+  },
+  {
+    "source": "list_unsigned.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "list_unsigned.out"
+      }
+    ]
+  },
+  {
+    "source": "list_bool.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "list_bool.out"
+      }
+    ]
+  },
+  {
+    "source": "identifier_poison.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "identifier_poison.out"
+      }
+    ]
+  },
+  {
+    "source": "list_evaluation_order.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "list_evaluation_order.out"
+      }
+    ]
+  },
+  {
+    "source": "repeat_evaluated_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "repeat_evaluated_once.out"
+      }
+    ]
+  },
+  {
+    "source": "repeat_zero_side_effect.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "repeat_zero_side_effect.out"
+      }
+    ]
+  },
+  {
+    "source": "list_diverging_element.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "list_diverging_element.out"
+      }
+    ]
+  },
+  {
+    "source": "repeat_diverging_element.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "repeat_diverging_element.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_repeat.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nested_repeat.out"
+      }
+    ]
+  },
+  {
+    "source": "repeat_large_dynamic_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "repeat_large_dynamic_once.out"
+      }
+    ]
+  },
+  {
+    "source": "repeat_struct.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "repeat_struct.out"
+      }
+    ]
+  },
+  {
+    "source": "index_dynamic_3.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "index_dynamic_3.out"
+      }
+    ]
+  },
+  {
+    "source": "index_mutable_reference.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "index_mutable_reference.out"
+      }
+    ]
+  },
+  {
+    "source": "index_borrow_temporary_element.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "index_borrow_temporary_element.out"
+      }
+    ]
+  },
+  {
+    "source": "index_nested_assignment.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "index_nested_assignment.out"
+      }
+    ]
+  },
+  {
+    "source": "index_base_before_index.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "index_base_before_index.out"
+      }
+    ]
+  },
+  {
+    "source": "index_base_not_copied_before_index.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "index_base_not_copied_before_index.out"
+      }
+    ]
+  },
+  {
+    "source": "index_diverging_index.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "index_diverging_index.out"
+      }
+    ]
+  }
+]

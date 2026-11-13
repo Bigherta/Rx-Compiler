@@ -1,0 +1,8 @@
+fn pick_u32(flag: bool, a: u32, b: u32) -> u32 {
+    if flag { a } else { b }
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(pick_u32((get_i32() != 0), (get_i32() as u32), (get_i32() as u32)) as i32); remaining -= 1; }
+}

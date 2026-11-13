@@ -1,0 +1,21 @@
+struct Item { value: Box<i32> }
+
+fn subject() -> i32 {
+let mut v = Vec::<Item>::new();
+    let mut i: i32 = 0;
+    while i < 20 {
+        v.push(Item { value: Box::<i32>::new(i * 3) });
+        i += 1;
+    }
+    let mut taken = v.remove(7);
+    *taken.value = 99;
+    if *v[7].value != 24 { return 2; }
+    v.push(taken);
+    if *v.remove(19).value != 99 { return 3; }
+    while !v.is_empty() { let item = v.remove(0); }
+    v.push(Item { value: Box::<i32>::new(123) });
+    if *v.remove(0).value == 123 && v.is_empty() { 1 } else { 4 }
+}
+fn main() {
+println_i32(subject());
+}

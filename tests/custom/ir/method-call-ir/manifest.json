@@ -1,0 +1,156 @@
+[
+  {
+    "source": "value_copy_independence.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "value_copy_independence.out"
+      }
+    ]
+  },
+  {
+    "source": "mutable_double_reference.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "mutable_double_reference.out"
+      }
+    ]
+  },
+  {
+    "source": "temporary_if_mutable.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "temporary_if_mutable.out"
+      }
+    ]
+  },
+  {
+    "source": "receiver_index_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "receiver_index_once.out"
+      }
+    ]
+  },
+  {
+    "source": "aggregate_arguments.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "aggregate_arguments.out"
+      }
+    ]
+  },
+  {
+    "source": "argument_coercion.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "argument_coercion.out"
+      }
+    ]
+  },
+  {
+    "source": "unit_tail_call.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "unit_tail_call.out"
+      }
+    ]
+  },
+  {
+    "source": "struct_result_chain.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "struct_result_chain.out"
+      }
+    ]
+  },
+  {
+    "source": "result_deref_reborrow.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "result_deref_reborrow.out"
+      }
+    ]
+  },
+  {
+    "source": "recursive_method.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "recursive_method.out"
+      }
+    ]
+  },
+  {
+    "source": "method_name_collision.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "method_name_collision.out"
+      }
+    ]
+  },
+  {
+    "source": "receiver_and_argument_evaluation_order.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "receiver_and_argument_evaluation_order.out"
+      }
+    ]
+  },
+  {
+    "source": "diverging_receiver.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "diverging_receiver.out"
+      }
+    ]
+  },
+  {
+    "source": "diverging_later_argument.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "diverging_later_argument.out"
+      }
+    ]
+  }
+]

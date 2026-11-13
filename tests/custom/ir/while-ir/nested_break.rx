@@ -1,0 +1,20 @@
+fn nested_break(outer: i32, inner: i32) -> i32 {
+    let mut i: i32 = 0;
+    let mut total: i32 = 0;
+    while i < outer {
+        let mut j: i32 = 0;
+        while j < inner {
+            if j == 2 { break; }
+            total += 1;
+            j += 1;
+        }
+        total += 100;
+        i += 1;
+    }
+    total
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(nested_break((get_i32() as i32), (get_i32() as i32)) as i32); remaining -= 1; }
+}

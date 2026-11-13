@@ -1,0 +1,9 @@
+fn record(trace: &mut i32, digit: i32, value: bool) -> bool {
+    *trace = *trace * 10 + digit;
+    value
+}
+fn rhs_continue_and() -> i32 { let mut n: i32 = 0; loop { n += 1; let value = (n < 3) && { continue; false }; break n * 10 + value as i32; } }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(rhs_continue_and() as i32); remaining -= 1; }
+}

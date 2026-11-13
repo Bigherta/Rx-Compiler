@@ -1,0 +1,9 @@
+fn subject(v: &Vec<i32>) -> Vec<i32> { Vec::<i32>::new().clone() }
+fn main() {
+let mut fixture_1 = Vec::<i32>::new();
+let mut original: Vec<i32> = fixture_1;
+let mut counter: i32 = 0;
+let mut cloned = subject(&original);
+println_i32((cloned).len() as i32);
+println_i32((original).len() as i32);
+}

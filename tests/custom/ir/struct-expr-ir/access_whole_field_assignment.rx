@@ -1,0 +1,9 @@
+struct Pair { x: i32, y: i32 }
+struct Outer { inner: Pair, n: i32 }
+
+fn subject() -> i32 { let mut p: Outer = Outer { inner: Pair { x: 10, y: 20 }, n: 9 }; p.inner = Pair { y: 6, x: 5 }; p.inner.y + p.n }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

@@ -1,0 +1,11 @@
+fn record(trace: &mut i32, digit: i32, value: bool) -> bool {
+    *trace = *trace * 10 + digit;
+    value
+}
+fn combine(a: i32, b: i32) -> i32 { a * 100 + b }
+fn consume(u: (), n: &mut i32) { *n += 100; }
+fn nested_condition(a: bool, b: bool) -> i32 { if if a { b } else { !b } { 31 } else { 47 } }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(nested_condition((get_i32() != 0), (get_i32() != 0)) as i32); remaining -= 1; }
+}

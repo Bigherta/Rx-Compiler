@@ -1,0 +1,8 @@
+fn pick_bool(flag: bool, a: bool, b: bool) -> bool {
+    if flag { a } else { b }
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(pick_bool((get_i32() != 0), (get_i32() != 0), (get_i32() != 0)) as i32); remaining -= 1; }
+}

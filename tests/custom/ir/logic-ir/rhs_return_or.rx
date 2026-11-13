@@ -1,0 +1,9 @@
+fn record(trace: &mut i32, digit: i32, value: bool) -> bool {
+    *trace = *trace * 10 + digit;
+    value
+}
+fn rhs_return_or(a: bool) -> i32 { (a || { return 7; false }) as i32 }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(rhs_return_or((get_i32() != 0)) as i32); remaining -= 1; }
+}

@@ -1,0 +1,15 @@
+fn continue_rechecks(limit: i32) -> i32 {
+    let mut i: i32 = 0;
+    let mut checks: i32 = 0;
+    while { checks += 1; i < limit } {
+        i += 1;
+        continue;
+        i += 100;
+    }
+    checks * 1000 + i
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(continue_rechecks((get_i32() as i32)) as i32); remaining -= 1; }
+}

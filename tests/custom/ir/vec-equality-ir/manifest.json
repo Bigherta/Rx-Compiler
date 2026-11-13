@@ -1,0 +1,101 @@
+[
+  {
+    "source": "empty_left_ne.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "empty_left_ne.out"
+      }
+    ]
+  },
+  {
+    "source": "different_lengths_shared_prefix_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "different_lengths_shared_prefix_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "length_129_last_mismatch_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "length_129_last_mismatch_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_vec_value_mismatch_ne.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nested_vec_value_mismatch_ne.out"
+      }
+    ]
+  },
+  {
+    "source": "three_levels_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "three_levels_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "vec_bool_array_stride_3_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "vec_bool_array_stride_3_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "reference_elements_mutable_mismatch_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "reference_elements_mutable_mismatch_eq.out"
+      }
+    ]
+  },
+  {
+    "source": "comparison_preserves_inputs.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "comparison_preserves_inputs.out"
+      }
+    ]
+  },
+  {
+    "source": "empty_null_eq.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "empty_null_eq.out"
+      }
+    ]
+  }
+]

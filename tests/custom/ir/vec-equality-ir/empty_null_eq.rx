@@ -1,0 +1,8 @@
+fn subject(a: &Vec<i32>, b: &Vec<i32>) -> i32 { (a == b) as i32 }
+fn main() {
+let mut fixture_1 = Vec::<i32>::new();
+let mut left: Vec<i32> = fixture_1;
+let mut fixture_2 = Vec::<i32>::new();
+let mut right: Vec<i32> = fixture_2;
+println_i32(subject(&left, &right));
+}

@@ -1,0 +1,8 @@
+struct Large { first: bool, values: [i32; 4], last: bool }
+
+fn subject() -> i32 { let b: Box<Large> = Box::<Large>::new(Large { first: true, values: [3, 5, 8, 13], last: false }); (*b).values[3] + ((*b).first as i32) + ((*b).last as i32) }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

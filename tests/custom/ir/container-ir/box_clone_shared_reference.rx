@@ -1,0 +1,8 @@
+struct Target { value: i32 }
+
+fn subject() -> i32 { let t: Target = Target { value: 23 }; let a: Box<&Target> = Box::<&Target>::new(&t); let b: Box<&Target> = Box::<&Target>::clone(&a); (**b).value }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

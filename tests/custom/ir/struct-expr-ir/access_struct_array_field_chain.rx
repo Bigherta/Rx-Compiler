@@ -1,0 +1,9 @@
+struct Pair { x: i32, y: i32 }
+struct Shelf { items: [Pair; 2], n: i32 }
+
+fn subject() -> i32 { let p: Shelf = Shelf { n: 8, items: [Pair { x: 1, y: 2 }, Pair { x: 3, y: 4 }] }; p.items[1].y }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

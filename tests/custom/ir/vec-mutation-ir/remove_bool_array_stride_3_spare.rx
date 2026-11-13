@@ -1,0 +1,19 @@
+fn subject(v: &mut Vec<[bool; 3]>, index: usize) -> [bool; 3] { v.remove(index) }
+fn main() {
+let mut fixture_1 = Vec::<[bool; 3]>::new();
+fixture_1.push([true, false, true]);
+fixture_1.push([false, true, false]);
+fixture_1.push([true, true, false]);
+let mut input = fixture_1;
+let removed = subject(&mut input, 1);
+println_i32(((removed)[0]) as i32);
+println_i32(((removed)[1]) as i32);
+println_i32(((removed)[2]) as i32);
+println_i32((input).len() as i32);
+println_i32((((input)[0])[0]) as i32);
+println_i32((((input)[0])[1]) as i32);
+println_i32((((input)[0])[2]) as i32);
+println_i32((((input)[1])[0]) as i32);
+println_i32((((input)[1])[1]) as i32);
+println_i32((((input)[1])[2]) as i32);
+}

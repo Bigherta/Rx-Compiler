@@ -1,0 +1,6 @@
+fn subject() -> i32 { let mut x: i32 = 17; let b: Box<&mut i32> = Box::<&mut i32>::new(&mut x); **b += 5; x }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

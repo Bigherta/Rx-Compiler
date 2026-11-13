@@ -1,0 +1,7 @@
+fn subject(poison: i32) -> [i32; 2] { [poison, poison + 1] }
+fn main() {
+
+let value = subject((7 as i32));
+println_i32(value[0] as i32);
+println_i32(value[1] as i32);
+}

@@ -1,0 +1,19 @@
+struct Target { value: i32 }
+
+fn subject(v: &Vec<&Target>) -> Vec<&Target> { v.clone() }
+fn main() {
+let mut fixture_1 = Vec::<&Target>::new();
+let mut fixture_2: Target = Target { value: (17 as i32) };
+fixture_1.push(&fixture_2);
+let mut fixture_5: Target = Target { value: (29 as i32) };
+fixture_1.push(&fixture_5);
+let mut original: Vec<&Target> = fixture_1;
+let mut counter: i32 = 0;
+let mut cloned = subject(&original);
+println_i32((cloned).len() as i32);
+println_i32((((*((cloned)[0]))).value) as i32);
+println_i32((((*((cloned)[1]))).value) as i32);
+println_i32((original).len() as i32);
+println_i32((((*((original)[0]))).value) as i32);
+println_i32((((*((original)[1]))).value) as i32);
+}

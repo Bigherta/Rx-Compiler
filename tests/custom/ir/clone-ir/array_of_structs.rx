@@ -1,0 +1,11 @@
+#[derive(Clone)]
+struct Pair { x: i32, y: i32 }
+fn subject() -> [Pair; 2] { [Pair { x: 3, y: -5 }, Pair { x: 7, y: 9 }].clone() }
+fn main() {
+
+let value = subject();
+println_i32(value[0].x as i32);
+println_i32(value[0].y as i32);
+println_i32(value[1].x as i32);
+println_i32(value[1].y as i32);
+}

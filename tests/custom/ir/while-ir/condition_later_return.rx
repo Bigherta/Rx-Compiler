@@ -1,0 +1,9 @@
+fn condition_later_return(stop: i32) -> i32 {
+    let mut i: i32 = 0;
+    while { if i == stop { return i + 100; } i < 5 } { i += 1; }
+    99
+}
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(condition_later_return((get_i32() as i32)) as i32); remaining -= 1; }
+}

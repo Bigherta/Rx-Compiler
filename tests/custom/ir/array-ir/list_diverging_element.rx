@@ -1,0 +1,6 @@
+fn subject() -> i32 { let a: [i32; 3] = [1, { return 17; }, 3]; 99 }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

@@ -1,0 +1,8 @@
+#[derive(PartialEq)]
+struct Odd { z: bool, a: i32, m: bool }
+fn subject(a: &&Odd, b: &&Odd) -> i32 { (a != b) as i32 }
+fn main() {
+let mut left: Odd = Odd { z: true, a: (-17 as i32), m: false };
+let mut right: Odd = Odd { z: true, a: (-17 as i32), m: false };
+println_i32(subject(&&left, &&right));
+}

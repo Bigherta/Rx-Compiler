@@ -1,0 +1,68 @@
+[
+  {
+    "source": "pick_u32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "pick_u32.in",
+        "output": "pick_u32.out"
+      }
+    ]
+  },
+  {
+    "source": "pick_bool.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "pick_bool.in",
+        "output": "pick_bool.out"
+      }
+    ]
+  },
+  {
+    "source": "compare_signed.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "compare_signed.in",
+        "output": "compare_signed.out"
+      }
+    ]
+  },
+  {
+    "source": "compare_unsigned.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "compare_unsigned.in",
+        "output": "compare_unsigned.out"
+      }
+    ]
+  },
+  {
+    "source": "shadowing.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "shadowing.in",
+        "output": "shadowing.out"
+      }
+    ]
+  },
+  {
+    "source": "many_merges.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "many_merges.in",
+        "output": "many_merges.out"
+      }
+    ]
+  }
+]

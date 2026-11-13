@@ -19,6 +19,8 @@ public:
 
   virtual std::any visitOperand(Operand *node) = 0;
 
+  virtual std::any visitPhiInst(PhiInst *node) = 0;
+
   virtual std::any visitAllocaInst(AllocaInst *node) = 0;
 
   virtual std::any visitLoadInst(LoadInst *node) = 0;
@@ -35,9 +37,9 @@ public:
 
   virtual std::any visitGEPInst(GEPInst *node) = 0;
 
-  virtual std::any visitExtractvalueInst(ExtractvalueInst *node) = 0;
-
   virtual std::any visitInsertvalueInst(InsertvalueInst *node) = 0;
+
+  virtual std::any visitExtractvalueInst(ExtractvalueInst *node) = 0;
 
   virtual std::any visitBrInst(BrInst *node) = 0;
 

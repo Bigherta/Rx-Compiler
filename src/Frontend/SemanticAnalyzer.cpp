@@ -176,17 +176,27 @@ FunctionSymbol *SemanticAnalyzer::getOrCreateBuiltinClone(const Type &type) {
     return nullptr;
   }
   const auto linkedName = encodeType(type) + "_clone";
-  if (auto iterator = builtinFunctions.find(linkedName);
-      iterator != builtinFunctions.end()) {
-    return iterator->second.get();
+  if (builtinFunctions.contains(linkedName)) {
+    return builtinFunctions.at(linkedName).get();
   }
+
   Type receiverType(TypeKind::ImmutReference);
   receiverType.elementType = std::make_unique<Type>(type);
   auto symbol = std::make_unique<FunctionSymbol>(
       linkedName, type, std::vector<Type>{receiverType});
   auto *function = symbol.get();
+  function->kind = FunctionKind::Clone;
   function->receiver = ReceiverKind::Shared;
   builtinFunctions.emplace(linkedName, std::move(symbol));
+  if (type.kind == TypeKind::Struct) {
+    auto *symbol = globalScopeVisitor->lookupStruct(type.structName.value());
+    for (const auto &[name, entryType] : symbol->structFields) {
+      getOrCreateBuiltinClone(entryType);
+    }
+  } else if (type.kind == TypeKind::Array || type.kind == TypeKind::Vec ||
+             type.kind == TypeKind::Box) {
+    getOrCreateBuiltinClone(*type.elementType);
+  }
   return function;
 }
 
@@ -205,13 +215,16 @@ FunctionSymbol *SemanticAnalyzer::getOrCreateBuiltinContainerFunction(
   Type returnType(TypeKind::Unit);
   std::vector<Type> paramTypes;
   ReceiverKind receiver = ReceiverKind::None;
+  FunctionKind kind = FunctionKind::Normal;
   if (methodName == "new") {
+    kind = FunctionKind::New;
     returnType = containerType;
     if (containerType.kind == TypeKind::Box) {
       paramTypes.push_back(argumentType);
     }
   } else if (containerType.kind == TypeKind::Vec &&
              (methodName == "len" || methodName == "is_empty")) {
+    kind = methodName == "len" ? FunctionKind::Len : FunctionKind::IsEmpty;
     receiver = ReceiverKind::Shared;
     Type receiverType(TypeKind::ImmutReference);
     receiverType.elementType = std::make_unique<Type>(containerType);
@@ -219,6 +232,7 @@ FunctionSymbol *SemanticAnalyzer::getOrCreateBuiltinContainerFunction(
     returnType = Type(methodName == "len" ? TypeKind::Usize : TypeKind::Bool);
   } else if (containerType.kind == TypeKind::Vec &&
              (methodName == "push" || methodName == "remove")) {
+    kind = methodName == "push" ? FunctionKind::Push : FunctionKind::Remove;
     receiver = ReceiverKind::Mutable;
     Type receiverType(TypeKind::MutReference);
     receiverType.elementType = std::make_unique<Type>(containerType);
@@ -230,14 +244,7 @@ FunctionSymbol *SemanticAnalyzer::getOrCreateBuiltinContainerFunction(
       returnType = argumentType;
     }
   } else if (methodName == "clone") {
-    if (!hasTrait(containerType, BuiltinTrait::Clone)) {
-      return nullptr;
-    }
-    receiver = ReceiverKind::Shared;
-    Type receiverType(TypeKind::ImmutReference);
-    receiverType.elementType = std::make_unique<Type>(containerType);
-    paramTypes.emplace_back(receiverType);
-    returnType = containerType;
+    return getOrCreateBuiltinClone(containerType);
   } else {
     return nullptr;
   }
@@ -245,7 +252,9 @@ FunctionSymbol *SemanticAnalyzer::getOrCreateBuiltinContainerFunction(
       containerType.kind == TypeKind::Box ? "Box" : "Vec";
   auto symbol = std::make_unique<FunctionSymbol>(
       containerName + "::" + methodName, returnType, paramTypes);
+  symbol->mangledName = manglingName;
   auto *function = symbol.get();
+  function->kind = kind;
   function->receiver = receiver;
   builtinFunctions.emplace(manglingName, std::move(symbol));
   return function;
@@ -272,13 +281,15 @@ FunctionSymbol *SemanticAnalyzer::getOrCreateBuiltinArrayFunction(
   }
   auto symbol = std::make_unique<FunctionSymbol>("Array::" + methodName,
                                                  returnType, paramTypes);
+  symbol->mangledName = manglingName;
   auto *function = symbol.get();
+  function->kind = FunctionKind::Len;
   function->receiver = ReceiverKind::Shared;
   builtinFunctions.emplace(manglingName, std::move(symbol));
   return function;
 }
 
-std::string SemanticAnalyzer::encodeType(const Type &type) const {
+std::string SemanticAnalyzer::encodeType(const Type &type) {
   switch (type.kind) {
   case TypeKind::I32:
     return "I32";
@@ -511,6 +522,7 @@ std::any SemanticAnalyzer::visitFunctionDeclItem(FunctionDeclItemNode *node) {
   auto *functionSymbol =
       structScope ? structScope->lookupFunction(node->identifier)
                   : globalScopeVisitor->lookupFunction(node->identifier);
+  node->functionSymbol = functionSymbol;
   if (functionSymbol) {
     functionSymbol->returnType = returnType;
     if (structScope) {
@@ -1374,13 +1386,8 @@ std::optional<std::string> SemanticAnalyzer::getSelfName() {
 }
 
 std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
-  // Invalid paths keep an error semantic; successful lookup selects its kind.
+  // Function paths use ExprSemantic; value bindings get specialized semantics.
   node->semantic = std::make_unique<ExprSemantic>();
-  const auto bindFunction = [&](FunctionSymbol *function) {
-    auto semantic = std::make_unique<FunctionPathInExprSemantic>();
-    semantic->functionSymbol = function;
-    node->semantic = std::move(semantic);
-  };
   const auto bindValue = [&](auto *symbol) {
     auto semantic = std::make_unique<ValuePathInExprSemantic>();
     semantic->bindingSymbol = symbol;
@@ -1440,7 +1447,6 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
       // A function path may carry lifetimes; they do not affect its value.
       Type type(TypeKind::Function);
       type.functionSymbol = function;
-      bindFunction(function);
       return ExprInfo{type, false, false};
     }
     error.occur(node->pos,
@@ -1480,7 +1486,6 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
                       "` has no associated item named `" + methodName + "`");
       return ExprInfo{Type(TypeKind::Error), false};
     }
-    bindFunction(function);
     return ExprInfo{function->functionalType, false};
   }
 
@@ -1511,7 +1516,6 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
       return ExprInfo{Type(TypeKind::Error), false};
     }
     auto *function = getOrCreateBuiltinClone(Type(kind, node->pos));
-    bindFunction(function);
     return ExprInfo{function->functionalType, false};
   };
   if (typeSeg.pathIdentSegment == "i32") {
@@ -1559,7 +1563,6 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
     if (nameSeg.pathIdentSegment == "clone") {
       auto *function = getOrCreateBuiltinClone(Type(structName.value()));
       if (function) {
-        bindFunction(function);
         return ExprInfo{function->functionalType, false};
       }
       error.occur(node->pos, "Invalid Path: the struct has no Clone trait");
@@ -1575,7 +1578,6 @@ std::any SemanticAnalyzer::visitPathInExpr(PathInExprNode *node) {
     // A function path may carry lifetimes; they do not affect its value.
     Type type(TypeKind::Function);
     type.functionSymbol = function;
-    bindFunction(function);
     return ExprInfo{type, false, false};
   }
   if (auto *constant = dynamic_cast<ConstantSymbol *>(itemSymbol)) {
@@ -1961,6 +1963,19 @@ std::any SemanticAnalyzer::visitComparisonExpr(ComparisonExprNode *node) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
   const bool isDiverge = leftExprInfo.isDiverge || rightExprInfo.isDiverge;
+  // Compare reference targets after validating the original operand types.
+  const auto recordDereferences = [](ExprNode *expr) {
+    auto &semantic = *expr->semantic;
+    const Type *type = &semantic.adjustedType;
+    while (type->kind == TypeKind::ImmutReference ||
+           type->kind == TypeKind::MutReference) {
+      type = type->elementType.get();
+      semantic.adjustments.emplace_back(
+          Adjustment{AdjustmentKind::Deref, *type});
+    }
+    Type adjustedType(*type);
+    semantic.adjustedType = std::move(adjustedType);
+  };
 
   if (node->op == ComparisonOperator::equal ||
       node->op == ComparisonOperator::notEqual) {
@@ -1976,6 +1991,8 @@ std::any SemanticAnalyzer::visitComparisonExpr(ComparisonExprNode *node) {
                   "PartialEq");
       return ExprInfo{Type(TypeKind::Error), false};
     }
+    recordDereferences(node->leftChildExpr.get());
+    recordDereferences(node->rightChildExpr.get());
     return ExprInfo{Type(TypeKind::Bool), isDiverge};
   }
 
@@ -2008,6 +2025,8 @@ std::any SemanticAnalyzer::visitComparisonExpr(ComparisonExprNode *node) {
         Adjustment{AdjustmentKind::MutToShared, leftExprInfo.type});
     node->rightChildExpr->semantic->adjustedType = leftExprInfo.type;
   }
+  recordDereferences(node->leftChildExpr.get());
+  recordDereferences(node->rightChildExpr.get());
   return ExprInfo{Type(TypeKind::Bool), isDiverge};
 }
 
@@ -2376,9 +2395,8 @@ SemanticAnalyzer::generatePossibleQueue(const Type *calleeType, bool isMutable,
 }
 
 std::any SemanticAnalyzer::visitMethodCallExpr(MethodCallExprNode *node) {
-  node->semantic = std::make_unique<MethodCallExprSemantic>();
-  auto *methodSemantic =
-      static_cast<MethodCallExprSemantic *>(node->semantic.get());
+  node->semantic = std::make_unique<CallExprSemantic>();
+  auto *methodSemantic = static_cast<CallExprSemantic *>(node->semantic.get());
   if (!node->callMethod.args.genericArgs.empty()) {
     error.occur(
         node->pos,
@@ -2591,7 +2609,8 @@ std::any SemanticAnalyzer::visitMethodCallExpr(MethodCallExprNode *node) {
     }
     isDiverge |= paramInfo.isDiverge;
   }
-  methodSemantic->receiverAdjustments = std::move(adjusts);
+  node->callee->semantic->adjustments = std::move(adjusts);
+  node->callee->semantic->adjustedType = finalFunc->paramTypes.front();
   return ExprInfo{finalFunc->returnType, isDiverge};
 }
 
@@ -2618,7 +2637,7 @@ std::any SemanticAnalyzer::visitContinueExpr(ContinueExprNode *node) {
     error.occur(node->pos, "Invalid Expression: `continue` is only allowed "
                            "inside a `loop` or `while` loop");
     return ExprInfo{Type(TypeKind::Error), false};
-  } else if (const auto &topCtx = loopStack.top();
+  } else if (const auto &topCtx = loopStack.back();
              topCtx.kind == LoopKind::While) {
     if (topCtx.checkingCondition) {
       error.occur(node->pos,
@@ -2636,7 +2655,7 @@ std::any SemanticAnalyzer::visitBreakExpr(BreakExprNode *node) {
                            "inside a `loop` or `while` loop");
     return ExprInfo{Type(TypeKind::Error), false};
   } else {
-    auto &topCtx = loopStack.top();
+    auto &topCtx = loopStack.back();
     if (topCtx.kind == LoopKind::While) {
       if (node->hasExplicitValue) {
         error.occur(node->pos,
@@ -2671,9 +2690,9 @@ std::any SemanticAnalyzer::visitInfiniteLoopExpr(InfiniteLoopExprNode *node) {
 std::any SemanticAnalyzer::visitPredicateLoopExpr(PredicateLoopExprNode *node) {
   auto _ = LoopGuard(loopStack, LoopContext(LoopKind::While));
   Type boolType(TypeKind::Bool);
-  loopStack.top().checkingCondition = true;
+  loopStack.back().checkingCondition = true;
   auto conditionInfo = checkExpr(node->conditions.get(), &boolType);
-  loopStack.top().checkingCondition = false;
+  loopStack.back().checkingCondition = false;
   if (conditionInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
@@ -3245,13 +3264,13 @@ auto SemanticAnalyzer::analyzeArrayExpr(ArrayExprNode *node, Type *expected)
 auto SemanticAnalyzer::analyzeLoopExpr(InfiniteLoopExprNode *node,
                                        Type *expected) -> ExprInfo {
   auto _ = LoopGuard(loopStack, LoopContext(LoopKind::Loop));
-  loopStack.top().expected = expected;
+  loopStack.back().expected = expected;
   Type unitType(TypeKind::Unit);
   auto bodyInfo = checkExpr(node->body.get(), &unitType);
   if (bodyInfo.type.kind == TypeKind::Error) {
     return ExprInfo{Type(TypeKind::Error), false};
   }
-  auto &ctx = loopStack.top();
+  auto &ctx = loopStack.back();
   if (ctx.breakInfos.empty()) {
     return ExprInfo{Type(TypeKind::Never), true};
   } else {

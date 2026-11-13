@@ -1,0 +1,112 @@
+[
+  {
+    "source": "assignment_order.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "assignment_order.in",
+        "output": "assignment_order.out"
+      }
+    ]
+  },
+  {
+    "source": "compound_order.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "compound_order.in",
+        "output": "compound_order.out"
+      }
+    ]
+  },
+  {
+    "source": "binary_left_end.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "binary_left_end.in",
+        "output": "binary_left_end.out"
+      }
+    ]
+  },
+  {
+    "source": "binary_right_end.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "binary_right_end.in",
+        "output": "binary_right_end.out"
+      }
+    ]
+  },
+  {
+    "source": "dereference_end.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "dereference_end.in",
+        "output": "dereference_end.out"
+      }
+    ]
+  },
+  {
+    "source": "let_end.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "let_end.in",
+        "output": "let_end.out"
+      }
+    ]
+  },
+  {
+    "source": "argument_first_end.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "argument_first_end.in",
+        "output": "argument_first_end.out"
+      }
+    ]
+  },
+  {
+    "source": "argument_second_end.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "argument_second_end.in",
+        "output": "argument_second_end.out"
+      }
+    ]
+  },
+  {
+    "source": "argument_third_end.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "argument_third_end.in",
+        "output": "argument_third_end.out"
+      }
+    ]
+  },
+  {
+    "source": "compare_right_end_0.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "compare_right_end_0.in",
+        "output": "compare_right_end_0.out"
+      }
+    ]
+  }
+]

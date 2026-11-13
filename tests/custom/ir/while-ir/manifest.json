@@ -1,0 +1,112 @@
+[
+  {
+    "source": "condition_effects.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "condition_effects.in",
+        "output": "condition_effects.out"
+      }
+    ]
+  },
+  {
+    "source": "continue_rechecks.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "continue_rechecks.in",
+        "output": "continue_rechecks.out"
+      }
+    ]
+  },
+  {
+    "source": "break_at.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "break_at.in",
+        "output": "break_at.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_break.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "nested_break.in",
+        "output": "nested_break.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_continue.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "nested_continue.in",
+        "output": "nested_continue.out"
+      }
+    ]
+  },
+  {
+    "source": "loop_in_condition.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "loop_in_condition.in",
+        "output": "loop_in_condition.out"
+      }
+    ]
+  },
+  {
+    "source": "inner_condition_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "inner_condition_return.in",
+        "output": "inner_condition_return.out"
+      }
+    ]
+  },
+  {
+    "source": "and_condition_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "and_condition_return.in",
+        "output": "and_condition_return.out"
+      }
+    ]
+  },
+  {
+    "source": "or_condition_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "or_condition_return.in",
+        "output": "or_condition_return.out"
+      }
+    ]
+  },
+  {
+    "source": "condition_later_return.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "condition_later_return.in",
+        "output": "condition_later_return.out"
+      }
+    ]
+  }
+]

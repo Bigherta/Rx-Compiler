@@ -1,0 +1,9 @@
+fn inner_condition_return(limit: i32) -> i32 {
+    while 0 < limit { while { return 17; false } {} }
+    55
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(inner_condition_return((get_i32() as i32)) as i32); remaining -= 1; }
+}

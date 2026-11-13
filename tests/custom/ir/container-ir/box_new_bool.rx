@@ -1,0 +1,6 @@
+fn subject() -> i32 { let b: Box<bool> = Box::<bool>::new(false); (*b) as i32 }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

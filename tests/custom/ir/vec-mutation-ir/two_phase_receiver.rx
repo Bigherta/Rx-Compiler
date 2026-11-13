@@ -1,0 +1,14 @@
+fn subject() -> i32 {
+let mut v = Vec::<usize>::new();
+    let mut i: usize = 0;
+    while i < 40usize { v.push(v.len()); i += 1usize; }
+    i = 0;
+    while i < 40usize {
+        if v[i] != i { return 2; }
+        i += 1usize;
+    }
+    1
+}
+fn main() {
+println_i32(subject());
+}

@@ -1,0 +1,5 @@
+fn mul_i32(a: i32, b: i32) -> i32 { a * b }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(mul_i32((get_i32() as i32), (get_i32() as i32)) as i32); remaining -= 1; }
+}

@@ -1,0 +1,5 @@
+fn bump(n: &mut i32) { *n += 1; }
+fn combine(a: i32, b: i32) -> i32 { a * 100 + b }
+fn consume(u: (), n: &mut i32) { *n += 100; }
+fn infinite_continue() -> i32 { loop { continue; } }
+fn main() {}

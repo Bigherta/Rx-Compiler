@@ -64,4 +64,32 @@ add_executable(rx_compiler main.cpp
   IR/IRVisitor.hpp)
 target_link_libraries(rx_compiler PRIVATE rx_parser)
 
+option(RX_BUILD_IR_UNIT_TESTS "Build focused IR generator unit tests" OFF)
+if(BUILD_TESTING AND RX_BUILD_IR_UNIT_TESTS)
+  add_executable(rx_emit_place_tests
+    ../tests/unit/emit_place.cpp
+    Frontend/SymbolCollector.cpp
+    Frontend/SemanticAnalyzer.cpp
+    IR/IRGenerator.cpp)
+  target_include_directories(rx_emit_place_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/IR")
+  target_link_libraries(rx_emit_place_tests PRIVATE rx_parser)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(rx_emit_place_tests PRIVATE -O0 -g0)
+  endif()
+  find_program(RX_LLVM_AS NAMES llvm-as-22 llvm-as)
+  foreach(case IN ITEMS
+      place_i32 place_array temporary_i32 temporary_bool temporary_array
+      temporary_reference deref_i32 deref_bool deref_array deref_twice
+      temporary_deref borrow_i32 borrow_array temporary_borrow deref_then_borrow
+      mut_to_shared mut_to_shared_deref diverging never_to_any)
+    set(ir_path "${CMAKE_CURRENT_BINARY_DIR}/tests/emit-place/${case}.ll")
+    add_test(NAME "emit_place.${case}" COMMAND rx_emit_place_tests "${case}" "${ir_path}")
+    if(RX_LLVM_AS)
+      add_test(NAME "emit_place.verify.${case}"
+        COMMAND "${RX_LLVM_AS}" "${ir_path}" -o "${ir_path}.bc")
+      set_tests_properties("emit_place.verify.${case}" PROPERTIES DEPENDS "emit_place.${case}")
+    endif()
+  endforeach()
+endif()
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Coverage.cmake")

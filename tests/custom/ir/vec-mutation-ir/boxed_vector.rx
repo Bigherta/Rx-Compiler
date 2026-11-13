@@ -1,0 +1,10 @@
+fn subject() -> i32 {
+let mut b = Box::<Vec<bool>>::new(Vec::<bool>::new());
+    let mut i: i32 = 0;
+    while i < 20 { b.push(i % 2 == 0); i += 1; }
+    if !b.remove(0) || b.remove(0) || !b.remove(0) { return 2; }
+    if b.len() == 17usize && !b[0] && b[1] { 1 } else { 3 }
+}
+fn main() {
+println_i32(subject());
+}

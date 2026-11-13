@@ -11,6 +11,7 @@ Rx 编译器课程项目仓库。仓库包含 Rx 语言的 ANTLR 文法与生成
 | `src/Parser/` | 从文法生成的 C++ Lexer、Parser、Visitor 和 Listener 接口。 |
 | `docs/parser.md` | Parser C++ 接口用法与错误处理说明。 |
 | `tests/official/` | 官方测试用例（Git 子模块）；`tests/custom/` 可放置本地测试。 |
+| `tests/custom/ir/` | 由 `make test` 统一执行的自定义 IR 用例、输入输出及清单。 |
 | `scripts/test.py` | 测试运行器；由根目录 `make test` 调用。 |
 | `vendor/REIMU/` | REIMU 模拟器（Git 子模块）。 |
 | `config.mk` | 测试运行器调用的构建、语义检查、IR、代码生成和执行命令。 |
@@ -70,7 +71,17 @@ make test VERBOSE=true
 
 ### 自有后端的 IR 测试
 
-后端仍在逐步实现，可先只运行当前支持的最小程序：
+IR 测试统一使用 [`tests/custom/ir/`](tests/custom/ir/README.md) 下的
+`.rx`、输入输出文件和 `manifest.json`，不再需要单独运行专项 Python 脚本：
+
+```sh
+make test FILTER=custom:ir
+make test FILTER=custom:ir:array-ir STAGE=ir
+make test FILTER=custom:ir:struct-equality-ir STAGE=ir
+```
+
+本目录精简保留 200 个重点 IR 用例；语义拒绝测试由已有前端测试集负责。
+也可以显式限定 IR 阶段：
 
 ```sh
 make test FILTER=custom:ir STAGE=ir

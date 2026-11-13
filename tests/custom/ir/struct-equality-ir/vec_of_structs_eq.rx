@@ -1,0 +1,14 @@
+#[derive(PartialEq)]
+struct Odd { z: bool, a: i32, m: bool }
+fn subject(a: &Vec<Odd>, b: &Vec<Odd>) -> i32 { (a == b) as i32 }
+fn main() {
+let mut fixture_1 = Vec::<Odd>::new();
+fixture_1.push(Odd { z: true, a: (-17 as i32), m: false });
+fixture_1.push(Odd { z: true, a: (-17 as i32), m: false });
+let mut left: Vec<Odd> = fixture_1;
+let mut fixture_10 = Vec::<Odd>::new();
+fixture_10.push(Odd { z: true, a: (-17 as i32), m: false });
+fixture_10.push(Odd { z: true, a: (-17 as i32), m: false });
+let mut right: Vec<Odd> = fixture_10;
+println_i32(subject(&left, &right));
+}

@@ -1,0 +1,20 @@
+fn subject() -> i32 {
+let mut outer = Vec::<Vec<i32>>::new();
+    let mut i: i32 = 0;
+    while i < 12 {
+        let mut inner = Vec::<i32>::new();
+        inner.push(i);
+        inner.push(i + 100);
+        outer.push(inner);
+        i += 1;
+    }
+    outer[4].push(999);
+    let mut taken = outer.remove(4);
+    if taken.remove(1) != 104 || taken.remove(1) != 999 { return 2; }
+    if outer[4][0] != 5 || outer[4][1] != 105 { return 3; }
+    outer.push(taken);
+    if outer[11][0] == 4 && outer[11].len() == 1usize { 1 } else { 4 }
+}
+fn main() {
+println_i32(subject());
+}

@@ -48,6 +48,16 @@ enum class BuiltinTrait {
 
 enum class ReceiverKind { None, Value, Shared, Mutable };
 
+enum class FunctionKind {
+  Normal,
+  Clone,
+  Len,
+  New,
+  IsEmpty,
+  Push,
+  Remove,
+};
+
 struct ConstValue {
   ConstExprNode *ctx = nullptr; // first pass store the AST context
   EvaluatedState state =
@@ -226,7 +236,8 @@ struct StructSymbol : GlobalSymbol {
   std::bitset<4> outAttribute; // 4 bits represent the 4 attributes
   std::bitset<4> traitValid;
   std::string name;
-  std::vector<std::string> layoutFields; 
+  std::vector<std::string> layoutFields;
+  std::unordered_map<std::string, std::size_t> fieldIndices;
   std::unordered_map<std::string, Type> structFields;
   std::unordered_map<std::string, std::unique_ptr<GlobalSymbol>> structSymbols;
   std::vector<StructSymbol *> dependency;
@@ -307,23 +318,23 @@ public:
 };
 
 struct FunctionSymbol : GlobalSymbol {
+  FunctionKind kind = FunctionKind::Normal;
   std::string name;
+  std::string mangledName;
   Type functionalType;
   Type returnType;
   std::vector<Type> paramTypes;
   ReceiverKind receiver = ReceiverKind::None;
   StructSymbol *owner = nullptr;
-  // Non-owning; the AST must outlive uses of this declaration. Null for built-ins.
-  FunctionDeclItemNode *declaration = nullptr;
   FunctionSymbol(const std::string &funcName)
-      : GlobalSymbol(symbolType::Function), name(funcName),
+      : GlobalSymbol(symbolType::Function), name(funcName), mangledName(funcName),
         returnType(TypeKind::Unit) {
     functionalType.kind = TypeKind::Function;
     functionalType.functionSymbol = this;
   }
   FunctionSymbol(const std::string &funcName, const Type &returnType,
                  const std::vector<Type> &funcParams)
-      : GlobalSymbol(symbolType::Function), name(funcName),
+      : GlobalSymbol(symbolType::Function), name(funcName), mangledName(funcName),
         returnType(returnType) {
     paramTypes = funcParams;
     functionalType.kind = TypeKind::Function;
@@ -336,7 +347,8 @@ struct FunctionSymbol : GlobalSymbol {
     functionalType.functionSymbol = this;
   }
   FunctionSymbol(FunctionSymbol &&other) noexcept
-      : GlobalSymbol(other), name(std::move(other.name)),
+      : GlobalSymbol(other), kind(other.kind), name(std::move(other.name)),
+        mangledName(std::move(other.mangledName)),
         functionalType(std::move(other.functionalType)),
         returnType(std::move(other.returnType)),
         paramTypes(std::move(other.paramTypes)), receiver(other.receiver) {
@@ -344,7 +356,6 @@ struct FunctionSymbol : GlobalSymbol {
     // its final address instead of the source object.
     functionalType.functionSymbol = this;
     owner = other.owner;
-    declaration = other.declaration;
   }
 };
 

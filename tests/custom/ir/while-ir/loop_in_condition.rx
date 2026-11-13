@@ -1,0 +1,16 @@
+fn loop_in_condition(limit: i32) -> i32 {
+    let mut i: i32 = 0;
+    let mut checks: i32 = 0;
+    while {
+        let mut j: i32 = 0;
+        while j < 2 { j += 1; }
+        checks += j;
+        i < limit
+    } { i += 1; }
+    checks * 1000 + i
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(loop_in_condition((get_i32() as i32)) as i32); remaining -= 1; }
+}

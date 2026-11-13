@@ -1,0 +1,4 @@
+fn subject() -> i32 { let mut a: [i32; 3] = [3, 5, 8]; let b: [i32; 3] = [3, 5, 8]; let first = a == b; a[1] = 9; (first as i32) * 10 + ((a != b) as i32) + b[1] }
+fn main() {
+println_i32(subject());
+}

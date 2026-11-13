@@ -1,0 +1,8 @@
+fn bump(n: &mut i32) { *n += 1; }
+fn combine(a: i32, b: i32) -> i32 { a * 100 + b }
+fn consume(u: (), n: &mut i32) { *n += 100; }
+fn shared_reference_coercion(flag: bool) -> i32 { let mut a: i32 = 11; let b: i32 = 22; let p: &i32 = loop { if flag { break &mut a; } else { break &b; } }; *p }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(shared_reference_coercion((get_i32() != 0)) as i32); remaining -= 1; }
+}

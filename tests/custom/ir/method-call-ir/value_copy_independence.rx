@@ -1,0 +1,11 @@
+#[derive(Copy, Clone)]
+struct Cell { value: i32 }
+
+impl Cell { fn replace(mut self, value: i32) -> i32 { self.value = value; self.value } }
+
+fn subject() -> i32 { let c: Cell = Cell { value: 7 }; let n: i32 = c.replace(29); c.value * 100 + n }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

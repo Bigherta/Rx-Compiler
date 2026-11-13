@@ -1,0 +1,9 @@
+#[derive(Clone)]
+struct Pair { x: i32, y: i32 }
+fn make(n: &mut i32) -> Pair { *n += 1; Pair { x: 7, y: 9 } }
+fn subject() -> i32 { let mut n: i32 = 0; let p: Pair = make(&mut n).clone(); n * 100 + p.x }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

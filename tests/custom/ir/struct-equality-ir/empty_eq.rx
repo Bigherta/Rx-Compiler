@@ -1,0 +1,8 @@
+#[derive(PartialEq)]
+struct Empty {}
+fn subject(a: &Empty, b: &Empty) -> i32 { (a == b) as i32 }
+fn main() {
+let mut left: Empty = Empty {  };
+let mut right: Empty = Empty {  };
+println_i32(subject(&left, &right));
+}

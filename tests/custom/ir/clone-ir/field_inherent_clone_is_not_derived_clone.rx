@@ -1,0 +1,11 @@
+#[derive(Clone)]
+struct Inner { value: i32 }
+impl Inner { fn clone(&self) -> Self { Inner { value: 99 } } }
+#[derive(Clone)]
+struct Wrap { inner: Inner }
+fn subject() -> Wrap { (Wrap { inner: Inner { value: 7 } }).clone() }
+fn main() {
+
+let value = subject();
+println_i32(value.inner.value as i32);
+}

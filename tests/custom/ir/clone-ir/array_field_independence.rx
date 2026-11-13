@@ -1,0 +1,8 @@
+#[derive(Clone)]
+struct Holder { a: [i32; 3], flag: bool }
+fn subject() -> i32 { let mut p: Holder = Holder { a: [3, 5, 8], flag: true }; let mut q: Holder = p.clone(); p.a[0] = 99; q.a[2] = 77; q.a[0] * 100 + p.a[2] }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

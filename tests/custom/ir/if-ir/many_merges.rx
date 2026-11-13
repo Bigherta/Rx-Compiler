@@ -1,0 +1,48 @@
+fn many_merges(flag: bool) -> i32 {
+let mut n: i32 = 0;
+n += if flag { 1 } else { -1 };
+n += if flag { 2 } else { -2 };
+n += if flag { 3 } else { -3 };
+n += if flag { 4 } else { -4 };
+n += if flag { 5 } else { -5 };
+n += if flag { 6 } else { -6 };
+n += if flag { 7 } else { -7 };
+n += if flag { 8 } else { -8 };
+n += if flag { 9 } else { -9 };
+n += if flag { 10 } else { -10 };
+n += if flag { 11 } else { -11 };
+n += if flag { 12 } else { -12 };
+n += if flag { 13 } else { -13 };
+n += if flag { 14 } else { -14 };
+n += if flag { 15 } else { -15 };
+n += if flag { 16 } else { -16 };
+n += if flag { 17 } else { -17 };
+n += if flag { 18 } else { -18 };
+n += if flag { 19 } else { -19 };
+n += if flag { 20 } else { -20 };
+n += if flag { 21 } else { -21 };
+n += if flag { 22 } else { -22 };
+n += if flag { 23 } else { -23 };
+n += if flag { 24 } else { -24 };
+n += if flag { 25 } else { -25 };
+n += if flag { 26 } else { -26 };
+n += if flag { 27 } else { -27 };
+n += if flag { 28 } else { -28 };
+n += if flag { 29 } else { -29 };
+n += if flag { 30 } else { -30 };
+n += if flag { 31 } else { -31 };
+n += if flag { 32 } else { -32 };
+n += if flag { 33 } else { -33 };
+n += if flag { 34 } else { -34 };
+n += if flag { 35 } else { -35 };
+n += if flag { 36 } else { -36 };
+n += if flag { 37 } else { -37 };
+n += if flag { 38 } else { -38 };
+n += if flag { 39 } else { -39 };
+n += if flag { 40 } else { -40 };
+n
+}
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(many_merges((get_i32() != 0)) as i32); remaining -= 1; }
+}

@@ -6,9 +6,9 @@
 #include "SemanticResult.hpp"
 #include "SymbolCollector.hpp"
 #include <cstddef>
+#include <deque>
 #include <memory>
 #include <optional>
-#include <stack>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -50,15 +50,15 @@ struct LoopContext {
 
 class LoopGuard {
 private:
-  std::stack<LoopContext> &owner;
+  std::deque<LoopContext> &owner;
 
 public:
   LoopGuard() = delete;
-  LoopGuard(std::stack<LoopContext> &loopStack, LoopContext ctx)
+  LoopGuard(std::deque<LoopContext> &loopStack, LoopContext ctx)
       : owner(loopStack) {
-    owner.emplace(ctx);
+    owner.emplace_back(ctx);
   }
-  ~LoopGuard() { owner.pop(); }
+  ~LoopGuard() { owner.pop_back(); }
 };
 
 struct FunctionContext {
@@ -87,8 +87,10 @@ struct ReceiverContext {
 };
 
 class SemanticAnalyzer : public ASTBaseVisitor {
+  friend class IRGenerator;
+
 private:
-  std::stack<LoopContext> loopStack;
+  std::deque<LoopContext> loopStack;
   std::optional<FunctionContext> functionInfoContainer;
   void analyzeStructDependency(StructSymbol &symbol);
   Type parseIntegerLiteral(const position &pos, std::string literal,
@@ -116,7 +118,7 @@ private:
   implementationScope *findImplementationScope(Scope *scope);
   void resolveArrayLengths(Type &type);
   std::optional<std::string> getSelfName();
-  bool isIntegerType(const Type &type) {
+  static bool isIntegerType(const Type &type) {
     return type.kind >= TypeKind::I32 && type.kind <= TypeKind::Usize;
   }
 
@@ -138,9 +140,9 @@ private:
   FunctionSymbol *
   getOrCreateBuiltinArrayFunction(const Type &ArrayType,
                                   const std::string &methodName);
-  std::string encodeType(const Type &type) const;
+  static std::string encodeType(const Type &type);
   Type autoDereference(const Type *refType, bool &mutablePlace,
-                       bool &mutationBlocked, std::vector<Adjustment>&adjusts);
+                       bool &mutationBlocked, std::vector<Adjustment> &adjusts);
   std::vector<ReceiverContext>
   generatePossibleQueue(const Type *calleeType, bool isMutable, bool isBlocked);
   Type saveType(TypeNode *node, Type &&type);
@@ -159,14 +161,14 @@ public:
     builtinFunctions.emplace(
         "get_i32", std::make_unique<FunctionSymbol>(
                        "get_i32", Type{TypeKind::I32}, std::vector<Type>{}));
-    builtinFunctions.emplace(
-        "print_i32", std::make_unique<FunctionSymbol>(
-                         "print_i32", Type{TypeKind::Unit},
-                         std::vector<Type>{Type{TypeKind::I32}}));
-    builtinFunctions.emplace(
-        "println_i32", std::make_unique<FunctionSymbol>(
-                           "println_i32", Type{TypeKind::Unit},
-                           std::vector<Type>{Type{TypeKind::I32}}));
+    builtinFunctions.emplace("print_i32",
+                             std::make_unique<FunctionSymbol>(
+                                 "print_i32", Type{TypeKind::Unit},
+                                 std::vector<Type>{Type{TypeKind::I32}}));
+    builtinFunctions.emplace("println_i32",
+                             std::make_unique<FunctionSymbol>(
+                                 "println_i32", Type{TypeKind::Unit},
+                                 std::vector<Type>{Type{TypeKind::I32}}));
   }
 
   void checkConstant();

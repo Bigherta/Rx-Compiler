@@ -1,0 +1,5 @@
+fn neg_i32(a: i32) -> i32 { -a }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(neg_i32((get_i32() as i32)) as i32); remaining -= 1; }
+}

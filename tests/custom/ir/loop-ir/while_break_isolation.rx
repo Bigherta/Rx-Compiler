@@ -1,0 +1,8 @@
+fn bump(n: &mut i32) { *n += 1; }
+fn combine(a: i32, b: i32) -> i32 { a * 100 + b }
+fn consume(u: (), n: &mut i32) { *n += 100; }
+fn while_break_isolation(flag: bool) -> i32 { loop { while flag { break; } break 7; } }
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(while_break_isolation((get_i32() != 0)) as i32); remaining -= 1; }
+}

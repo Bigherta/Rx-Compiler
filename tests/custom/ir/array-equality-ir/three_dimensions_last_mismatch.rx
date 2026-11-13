@@ -1,0 +1,6 @@
+fn subject(a: &[[[i32; 2]; 2]; 2], b: &[[[i32; 2]; 2]; 2]) -> i32 { (a == b) as i32 }
+fn main() {
+let mut left: [[[i32; 2]; 2]; 2] = [[[(1 as i32), (2 as i32)], [(3 as i32), (4 as i32)]], [[(5 as i32), (6 as i32)], [(7 as i32), (8 as i32)]]];
+let mut right: [[[i32; 2]; 2]; 2] = [[[(1 as i32), (2 as i32)], [(3 as i32), (4 as i32)]], [[(5 as i32), (6 as i32)], [(7 as i32), (9 as i32)]]];
+println_i32(subject(&left, &right));
+}

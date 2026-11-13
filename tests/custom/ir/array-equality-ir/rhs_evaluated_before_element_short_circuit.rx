@@ -1,0 +1,6 @@
+fn equality_different_left(log: &mut i32) -> [i32; 2] { *log = *log * 10 + 1; [0, 5] }
+fn equality_different_right(log: &mut i32) -> [i32; 2] { *log = *log * 10 + 2; [1, 5] }
+fn subject() -> i32 { let mut log: i32 = 0; let same = equality_different_left(&mut log) == equality_different_right(&mut log); log * 10 + same as i32 }
+fn main() {
+println_i32(subject());
+}

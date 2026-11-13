@@ -1,0 +1,21 @@
+#[derive(Clone)]
+struct Special { value: i32 }
+impl Special { fn clone(&self) -> Self { Special { value: 999 } } }
+
+fn subject(v: &Vec<Special>) -> Vec<Special> { v.clone() }
+fn main() {
+let mut fixture_1 = Vec::<Special>::new();
+fixture_1.push(Special { value: (17 as i32) });
+fixture_1.push(Special { value: (29 as i32) });
+let mut original: Vec<Special> = fixture_1;
+let mut counter: i32 = 0;
+let mut cloned = subject(&original);
+println_i32((cloned).len() as i32);
+println_i32((((cloned)[0]).value) as i32);
+((cloned)[0]).value = !(((cloned)[0]).value);
+println_i32((((cloned)[1]).value) as i32);
+((cloned)[1]).value = !(((cloned)[1]).value);
+println_i32((original).len() as i32);
+println_i32((((original)[0]).value) as i32);
+println_i32((((original)[1]).value) as i32);
+}

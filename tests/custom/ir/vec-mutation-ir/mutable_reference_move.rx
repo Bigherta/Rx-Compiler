@@ -1,0 +1,15 @@
+fn subject() -> i32 {
+let mut a: i32 = 3;
+    let mut b: i32 = 5;
+    let mut c: i32 = 8;
+    let mut v = Vec::<&mut i32>::new();
+    v.push(&mut a); v.push(&mut b); v.push(&mut c);
+    let r = v.remove(1);
+    *r += 100;
+    *v[0] += 10;
+    *v[1] += 20;
+    if a == 13 && b == 105 && c == 28 { 1 } else { 2 }
+}
+fn main() {
+println_i32(subject());
+}

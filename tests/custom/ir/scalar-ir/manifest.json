@@ -1,0 +1,156 @@
+[
+  {
+    "source": "scalars.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "scalars.out"
+      }
+    ]
+  },
+  {
+    "source": "div_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "div_i32.in",
+        "output": "div_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "rem_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "rem_i32.in",
+        "output": "rem_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "div_u32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "div_u32.in",
+        "output": "div_u32.out"
+      }
+    ]
+  },
+  {
+    "source": "rem_u32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "rem_u32.in",
+        "output": "rem_u32.out"
+      }
+    ]
+  },
+  {
+    "source": "shl_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "shl_i32.in",
+        "output": "shl_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "shr_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "shr_i32.in",
+        "output": "shr_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "shr_u32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "shr_u32.in",
+        "output": "shr_u32.out"
+      }
+    ]
+  },
+  {
+    "source": "add_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "add_i32.in",
+        "output": "add_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "mul_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "mul_i32.in",
+        "output": "mul_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "neg_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "neg_i32.in",
+        "output": "neg_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "not_bool.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "not_bool.in",
+        "output": "not_bool.out"
+      }
+    ]
+  },
+  {
+    "source": "cast_u32_i32.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "cast_u32_i32.in",
+        "output": "cast_u32_i32.out"
+      }
+    ]
+  },
+  {
+    "source": "cast_chain.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": "cast_chain.in",
+        "output": "cast_chain.out"
+      }
+    ]
+  }
+]

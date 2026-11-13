@@ -1,0 +1,8 @@
+fn subject() -> [bool; 3] { [true, false, !false] }
+fn main() {
+
+let value = subject();
+println_i32(value[0] as i32);
+println_i32(value[1] as i32);
+println_i32(value[2] as i32);
+}

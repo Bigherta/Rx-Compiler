@@ -1,0 +1,10 @@
+struct Cell { value: &i32 }
+
+impl Cell { fn get(&self) -> &&i32 { &self.value } }
+
+fn subject() -> i32 { let n: i32 = 17; let c: Cell = Cell { value: &n }; let r: &i32 = c.get(); *r }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

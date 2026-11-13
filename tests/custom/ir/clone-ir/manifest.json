@@ -1,0 +1,112 @@
+[
+  {
+    "source": "nonalphabetic_bool_padding.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nonalphabetic_bool_padding.out"
+      }
+    ]
+  },
+  {
+    "source": "nested_struct.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "nested_struct.out"
+      }
+    ]
+  },
+  {
+    "source": "array_of_structs.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "array_of_structs.out"
+      }
+    ]
+  },
+  {
+    "source": "zero_length_array_field.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "zero_length_array_field.out"
+      }
+    ]
+  },
+  {
+    "source": "shared_reference_to_non_clone.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "shared_reference_to_non_clone.out"
+      }
+    ]
+  },
+  {
+    "source": "double_shared_reference.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "double_shared_reference.out"
+      }
+    ]
+  },
+  {
+    "source": "copy_independence.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "copy_independence.out"
+      }
+    ]
+  },
+  {
+    "source": "array_field_independence.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "array_field_independence.out"
+      }
+    ]
+  },
+  {
+    "source": "receiver_evaluated_once.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "receiver_evaluated_once.out"
+      }
+    ]
+  },
+  {
+    "source": "field_inherent_clone_is_not_derived_clone.rx",
+    "stage": "ir",
+    "compilation_success": true,
+    "io": [
+      {
+        "input": null,
+        "output": "field_inherent_clone_is_not_derived_clone.out"
+      }
+    ]
+  }
+]

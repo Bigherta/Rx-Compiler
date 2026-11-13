@@ -1,0 +1,22 @@
+#[derive(Clone, PartialEq, Eq)]
+struct Node { value: i32, children: Vec<Self> }
+fn subject(a: &Node, b: &Node) -> i32 { (a == b) as i32 }
+fn main() {
+let mut fixture_3 = Vec::<Node>::new();
+let mut fixture_6 = Vec::<Node>::new();
+let mut fixture_9 = Vec::<Node>::new();
+fixture_6.push(Node { value: (7 as i32), children: fixture_9 });
+fixture_3.push(Node { value: (3 as i32), children: fixture_6 });
+let mut fixture_12 = Vec::<Node>::new();
+fixture_3.push(Node { value: (7 as i32), children: fixture_12 });
+let mut left: Node = Node { value: (1 as i32), children: fixture_3 };
+let mut fixture_15 = Vec::<Node>::new();
+let mut fixture_18 = Vec::<Node>::new();
+let mut fixture_21 = Vec::<Node>::new();
+fixture_18.push(Node { value: (9 as i32), children: fixture_21 });
+fixture_15.push(Node { value: (3 as i32), children: fixture_18 });
+let mut fixture_24 = Vec::<Node>::new();
+fixture_15.push(Node { value: (7 as i32), children: fixture_24 });
+let mut right: Node = Node { value: (1 as i32), children: fixture_15 };
+println_i32(subject(&left, &right));
+}

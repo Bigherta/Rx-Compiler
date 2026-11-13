@@ -1,0 +1,13 @@
+fn subject() -> i32 {
+let mut v = Vec::<Box<i32>>::new();
+    let mut i: i32 = 0;
+    while i < 12 { v.push(Box::<i32>::new(i)); i += 1; }
+    let mut cloned = v.clone();
+    *cloned[3] = 999;
+    let taken = cloned.remove(3);
+    v.push(taken);
+    if *v[3] == 3 && *v[12] == 999 && *cloned[3] == 4 { 1 } else { 2 }
+}
+fn main() {
+println_i32(subject());
+}

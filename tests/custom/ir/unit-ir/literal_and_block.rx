@@ -1,0 +1,19 @@
+fn return_literal() { return (); }
+
+fn literal_and_block() -> i32 {
+    let a: () = ();
+    let b: () = {};
+    let c: () = { let n: i32 = 1; };
+    let d: () = { a };
+    let mut e: () = b;
+    let assignment: () = e = d;
+    let p: &mut () = &mut e;
+    let indirect_assignment: () = *p = ();
+    return_literal();
+    7
+}
+
+fn main() {
+    let mut remaining = get_i32();
+    while remaining > 0 { println_i32(literal_and_block() as i32); remaining -= 1; }
+}

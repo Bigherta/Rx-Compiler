@@ -1,0 +1,13 @@
+#[derive(Clone)]
+struct Pair { x: i32, y: i32 }
+#[derive(Clone)]
+struct Outer { last: bool, inner: Pair, first: i32 }
+fn subject() -> Outer { (Outer { first: 11, inner: Pair { y: -5, x: 3 }, last: true }).clone() }
+fn main() {
+
+let value = subject();
+println_i32(value.last as i32);
+println_i32(value.inner.x as i32);
+println_i32(value.inner.y as i32);
+println_i32(value.first as i32);
+}

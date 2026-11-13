@@ -1,0 +1,11 @@
+#[derive(Copy, Clone)]
+struct Cell { value: i32 }
+
+impl Cell { fn sum(&self, n: &i32) -> i32 { self.value + *n } }
+
+fn subject() -> i32 { let c: Cell = Cell { value: 7 }; let mut n: i32 = 9; c.sum(&mut n) }
+fn main() {
+
+let value = subject();
+println_i32(value as i32);
+}

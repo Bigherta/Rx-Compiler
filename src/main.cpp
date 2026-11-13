@@ -133,16 +133,18 @@ int main(int argc, char **argv) {
   }
 
   // Print the available IR after all semantic checks succeed.
-  IRModules modules;
+  IRModules modules(&analyzer);
   std::ofstream irFile(outputPath);
   if (!irFile) {
     std::cerr << "File error: could not open `" << outputPath
               << "` for writing\n";
     return 2;
   }
-  modules.addRxItems(analyzer);
   IRGenerator generator(modules);
   crate->accept(&generator);
+  generator.generateBuiltinFunctions();
+  generator.generateEqualFunctions();
+
   IRPrinter printer(irFile);
   modules.accept(&printer);
   irFile.close();

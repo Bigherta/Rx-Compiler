@@ -1,0 +1,11 @@
+fn subject() -> [[i32; 2]; 3] { [[7, 8]; 3] }
+fn main() {
+
+let value = subject();
+println_i32(value[0][0] as i32);
+println_i32(value[0][1] as i32);
+println_i32(value[1][0] as i32);
+println_i32(value[1][1] as i32);
+println_i32(value[2][0] as i32);
+println_i32(value[2][1] as i32);
+}
