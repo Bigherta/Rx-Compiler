@@ -3,10 +3,12 @@
 # Optional: build your compiler once before testing. Leave empty if prebuilt.
 # {runtime} will be linked into every program.
 # Write shared runtime assembly there if your IR/CODEGEN output references it.
+# Large frontend/IR translation units need substantial memory; opt in to parallelism.
+RX_BUILD_JOBS ?= 1
 BUILD = cmake -S . -B target/oj-build -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_COMPILER=g++-14 \
     -DRX_FAST_BUILD=ON -DRX_USE_SYSTEM_ANTLR=ON && \
-    cmake --build target/oj-build --target rx_compiler -j4 && \
+    cmake --build target/oj-build --target rx_compiler -j$(RX_BUILD_JOBS) && \
     $(CLANG) --target=riscv32-unknown-elf -march=rv32im -mabi=ilp32 \
     -O2 -fno-builtin -S vendor/runtime/runtime.c -o {runtime}
 
