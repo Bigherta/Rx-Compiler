@@ -8,7 +8,6 @@ VERBOSE ?= false
 FILTER ?=
 # Optional single stage: semantic, ir, codegen, or optimization.
 STAGE ?=
-CLANG ?= clang-22
 COMPILE_TIMEOUT ?= 30
 RUN_TIMEOUT ?= 10
 

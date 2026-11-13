@@ -1,5 +1,8 @@
 # Fill in these five commands. See README-EN.md or README-ZH.md for details.
 
+# OJ reads this configuration without the root Makefile's defaults.
+CLANG ?= clang-22
+
 # Optional: build your compiler once before testing. Leave empty if prebuilt.
 # {runtime} will be linked into every program.
 # Write shared runtime assembly there if your IR/CODEGEN output references it.
